@@ -48,7 +48,25 @@
     <string name="seconds_ago">%1$d s ago</string>
     <string name="minutes_ago">%1$d min ago</string>
 
+    <string name="device">Phone</string>
+    <string name="device_out_of_range">This phone is out of range</string>
+    <string name="status_nearby">Nearby</string>
+    <string name="status_gone">Out of range, last known signal</string>
+    <string name="last_seen">Last seen: %1$s</string>
+    <string name="signal_chart">Signal strength over the last minute</string>
+    <string name="signal_hint">Signal strength over the last minute. It is a rough sign of closeness, not a distance: walls, pockets and bodies weaken it.</string>
+    <string name="section_details">Details</string>
+    <string name="temporary_id">Temporary ID</string>
+    <string name="first_seen">First seen</string>
+    <string name="sightings">Advertisements received</string>
+    <string name="tx_power">Transmit power</string>
+
     <string name="diagnostics">Diagnostics</string>
+    <string name="copy_log">Copy log</string>
+    <string name="clear_log">Clear log</string>
+    <string name="section_state">State</string>
+    <string name="section_events">Events</string>
+    <string name="events_empty">No events yet</string>
 
     <string name="error_already_started">already running</string>
     <string name="error_internal">internal Bluetooth error</string>

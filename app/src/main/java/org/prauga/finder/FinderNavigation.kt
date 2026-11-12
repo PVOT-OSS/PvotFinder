@@ -10,17 +10,37 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
+import org.prauga.finder.device.DeviceScreen
+import org.prauga.finder.diagnostics.DiagnosticsScreen
 import org.prauga.finder.home.HomeScreen
 
 @Serializable data object HomeKey : NavKey
 
+@Serializable data class DeviceKey(val idHex: String) : NavKey
+
+@Serializable data object DiagnosticsKey : NavKey
+
 @Composable
 fun FinderNavigation(container: AppContainer) {
     val backStack = rememberNavBackStack(HomeKey)
+    val back: () -> Unit = { backStack.removeLastOrNull() }
     NavDisplay(
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = back,
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
-        entryProvider = entryProvider { entry<HomeKey> { HomeScreen(container.discovery) } },
+        entryProvider =
+            entryProvider {
+                entry<HomeKey> {
+                    HomeScreen(
+                        discovery = container.discovery,
+                        onOpenDevice = { backStack.add(DeviceKey(it.toHex())) },
+                        onOpenDiagnostics = { backStack.add(DiagnosticsKey) },
+                    )
+                }
+                entry<DeviceKey> { key -> DeviceScreen(container.discovery, key.idHex, back) }
+                entry<DiagnosticsKey> {
+                    DiagnosticsScreen(container.discovery, container.diagnostics, back)
+                }
+            },
     )
 }
