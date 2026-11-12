@@ -18,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import org.prauga.finder.bluetooth.RssiSample
 
 private const val MIN_DBM = -100f
-private const val MAX_DBM = -30f
+private const val MAX_DBM = -20f
 
-/** RSSI over the last [windowMillis] up to [now], stronger signal higher. */
+/** RSSI over the last [windowMillis] up to [now], stronger signal higher, clamped to -100..-20 dBm. */
 @Composable
 fun RssiChart(
     samples: List<RssiSample>,
