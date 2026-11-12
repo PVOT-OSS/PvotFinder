@@ -5,4 +5,60 @@
 -->
 <resources>
     <string name="app_name">Pvot Finder</string>
+
+    <string name="section_bluetooth">Bluetooth</string>
+    <string name="section_discovery">Discovery</string>
+    <string name="section_nearby">Nearby phones</string>
+
+    <string name="bluetooth">Bluetooth</string>
+    <string name="bluetooth_unavailable">Not available</string>
+    <string name="bluetooth_off">Off</string>
+    <string name="bluetooth_turning_on">Turning on</string>
+    <string name="bluetooth_on">On</string>
+    <string name="bluetooth_turning_off">Turning off</string>
+    <string name="bluetooth_off_summary">Turn Bluetooth on to find phones nearby</string>
+
+    <string name="permission_nearby">Nearby devices permission</string>
+    <string name="permission_granted">Allowed</string>
+    <string name="permission_needed">Needed</string>
+    <string name="permission_summary">Lets Pvot Finder make this phone visible and look for other phones over Bluetooth. It does not use your location.</string>
+
+    <string name="advertise">Make this phone visible</string>
+    <string name="advertise_off">Other phones can\'t see this one</string>
+    <string name="advertising_as">Visible as %1$s</string>
+    <string name="scan">Look for nearby phones</string>
+    <string name="scan_off">Not looking</string>
+    <string name="scanning">Looking</string>
+    <string name="scan_waiting">Starting in %1$d s, Android limits how often scans start</string>
+    <string name="waiting_for_bluetooth">Waiting for Bluetooth</string>
+    <string name="needs_permission">Needs the nearby devices permission</string>
+    <string name="paused">Paused</string>
+    <string name="starting">Starting</string>
+    <string name="failed">Failed: %1$s</string>
+
+    <string name="forget_after">Forget a phone after it goes quiet for</string>
+    <string name="seconds_short">%1$d s</string>
+
+    <string name="nearby_empty">No phones yet</string>
+    <string name="nearby_empty_scanning">Turn on \"Make this phone visible\" on the other phone.</string>
+    <string name="nearby_empty_off">Turn on \"Look for nearby phones\" to see them here.</string>
+    <string name="device_name">Phone %1$s</string>
+    <string name="rssi_dbm">%1$d dBm</string>
+    <string name="just_now">Just now</string>
+    <string name="seconds_ago">%1$d s ago</string>
+    <string name="minutes_ago">%1$d min ago</string>
+
+    <string name="diagnostics">Diagnostics</string>
+
+    <string name="error_already_started">already running</string>
+    <string name="error_internal">internal Bluetooth error</string>
+    <string name="error_permission">permission denied</string>
+    <string name="error_unknown">unknown error</string>
+    <string name="advertise_error_too_large">advertisement too large</string>
+    <string name="advertise_error_too_many">too many apps advertising</string>
+    <string name="advertise_error_unsupported">this phone can\'t advertise over Bluetooth LE</string>
+    <string name="scan_error_registration">Bluetooth didn\'t register the scan</string>
+    <string name="scan_error_unsupported">this phone can\'t scan over Bluetooth LE</string>
+    <string name="scan_error_resources">out of Bluetooth hardware resources</string>
+    <string name="scan_error_too_frequent">scans started too often</string>
 </resources>

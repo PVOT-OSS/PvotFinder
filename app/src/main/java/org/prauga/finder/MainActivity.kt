@@ -4,14 +4,26 @@
 package org.prauga.finder
 
 import android.os.Bundle
-import androidx.compose.ui.res.stringResource
-import com.prauga.pvot.coreui.PvotEmptyContent
 import com.prauga.pvot.designsystem.platform.PvotBaseActivity
 import com.prauga.pvot.designsystem.theme.PvotAppTheme
 
 class MainActivity : PvotBaseActivity() {
+    private val container: AppContainer
+        get() = (application as FinderApplication).container
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setPvotContent { PvotAppTheme { PvotEmptyContent(stringResource(R.string.app_name)) } }
+        setPvotContent { PvotAppTheme { FinderNavigation(container) } }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        container.discovery.refreshPermissions()
+        container.discovery.setForeground(true)
+    }
+
+    override fun onStop() {
+        container.discovery.setForeground(false)
+        super.onStop()
     }
 }
