@@ -33,4 +33,6 @@ rootProject.name = "PvotFinder"
 
 include(":app")
 
+include(":bluetooth:protocol")
+
 providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }
