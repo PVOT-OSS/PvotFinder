@@ -115,6 +115,7 @@
     <string name="pairing_failed_cancelled_there">Pairing was cancelled on the other phone. Nothing was shared.</string>
     <string name="pairing_failed_protocol">The other phone sent something unexpected. Update Pvot Finder on both phones.</string>
     <string name="paired_summary">Paired %1$s</string>
+    <string name="paired_just_now">Paired just now</string>
     <string name="name">Name</string>
     <string name="name_summary">Shown to phones you pair with</string>
     <string name="paired_on">Paired</string>

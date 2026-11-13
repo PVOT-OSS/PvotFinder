@@ -156,13 +156,14 @@ fun NameDialog(
 }
 
 @Composable
-fun pairedSummary(peer: Peer): String =
-    stringResource(
+fun pairedSummary(peer: Peer): String {
+    val now = System.currentTimeMillis()
+    if (now - peer.pairedAtMillis < DateUtils.MINUTE_IN_MILLIS) {
+        return stringResource(R.string.paired_just_now)
+    }
+    return stringResource(
         R.string.paired_summary,
-        DateUtils.getRelativeTimeSpanString(
-                peer.pairedAtMillis,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS,
-            )
+        DateUtils.getRelativeTimeSpanString(peer.pairedAtMillis, now, DateUtils.MINUTE_IN_MILLIS)
             .toString(),
     )
+}
