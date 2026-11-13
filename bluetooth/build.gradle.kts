@@ -7,6 +7,7 @@ android { namespace = "org.prauga.finder.bluetooth" }
 
 dependencies {
     api(project(":bluetooth:protocol"))
+    api(project(":pairing"))
     api(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
