@@ -88,6 +88,10 @@ class IdentityRepository(
             )
         }
 
+    /** Each paired phone's static public key by device ID. */
+    suspend fun peerStaticKeys(): Map<String, ByteArray> =
+        withContext(io) { dao.peerList().associate { it.deviceIdHex to it.staticPublicKey } }
+
     /** Each paired phone's beacon secret by device ID, opened for deriving its identifiers. */
     suspend fun peerSecrets(): Map<String, ByteArray> =
         withContext(io) {
