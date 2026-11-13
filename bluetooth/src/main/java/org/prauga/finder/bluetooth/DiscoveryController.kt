@@ -127,7 +127,8 @@ class DiscoveryController(
         if (current != permissions.value) {
             log.add(
                 DiagnosticEvent.Kind.PERMISSION,
-                "Scan ${grant(current.canScan)}, advertise ${grant(current.canAdvertise)}",
+                "Scan ${grant(current.canScan)}, advertise ${grant(current.canAdvertise)}, " +
+                    "connect ${grant(current.canConnect)}",
             )
         }
         permissions.value = current

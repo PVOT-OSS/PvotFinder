@@ -7,9 +7,13 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 
-data class PermissionState(val canScan: Boolean, val canAdvertise: Boolean) {
+data class PermissionState(
+    val canScan: Boolean,
+    val canAdvertise: Boolean,
+    val canConnect: Boolean = true,
+) {
     val allGranted: Boolean
-        get() = canScan && canAdvertise
+        get() = canScan && canAdvertise && canConnect
 }
 
 class BluetoothPermissions(private val context: Context) {
@@ -17,6 +21,7 @@ class BluetoothPermissions(private val context: Context) {
         PermissionState(
             canScan = granted(Manifest.permission.BLUETOOTH_SCAN),
             canAdvertise = granted(Manifest.permission.BLUETOOTH_ADVERTISE),
+            canConnect = granted(Manifest.permission.BLUETOOTH_CONNECT),
         )
 
     private fun granted(permission: String): Boolean =
@@ -24,6 +29,10 @@ class BluetoothPermissions(private val context: Context) {
 
     companion object {
         val REQUIRED =
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_ADVERTISE)
+            arrayOf(
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT,
+            )
     }
 }
