@@ -24,6 +24,15 @@ data class SelfIdentity(val deviceId: ByteArray, val name: String) {
     override fun hashCode(): Int = 31 * deviceId.contentHashCode() + name.hashCode()
 }
 
+/** Where this phone was when it last heard a paired phone. */
+data class LastSeen(
+    val seenAtMillis: Long,
+    val latitude: Double?,
+    val longitude: Double?,
+    val accuracyMetres: Float?,
+    val rssi: Int,
+)
+
 /** A paired phone, without its secret. */
 data class Peer(
     val deviceIdHex: String,
@@ -103,12 +112,48 @@ class IdentityRepository(
     suspend fun renamePeer(deviceIdHex: String, name: String) =
         withContext(io) { dao.renamePeer(deviceIdHex, name.trim().take(PeerInfo.MAX_TEXT)) }
 
-    suspend fun removePeer(deviceIdHex: String) = withContext(io) { dao.removePeer(deviceIdHex) }
+    suspend fun removePeer(deviceIdHex: String) =
+        withContext(io) {
+            dao.removeSeenFor(deviceIdHex)
+            dao.removePeer(deviceIdHex)
+        }
+
+    /** Newest first: the latest sighting, then one per hour for [LAST_SEEN_DAYS] days. */
+    fun lastSeen(deviceIdHex: String): Flow<List<LastSeen>> =
+        dao.lastSeen(deviceIdHex).map { list ->
+            list.map { LastSeen(it.seenAtMillis, it.latitude, it.longitude, it.accuracyMetres, it.rssi) }
+        }
+
+    /**
+     * Records a sighting. A sighting in the same hour as the newest one replaces it, so each hour keeps
+     * its last sighting; anything older than [LAST_SEEN_DAYS] days is dropped.
+     */
+    suspend fun recordSeen(deviceIdHex: String, seen: LastSeen) =
+        withContext(io) {
+            mutex.withLock {
+                val newest = dao.newestSeen(deviceIdHex)
+                if (newest != null && newest.seenAtMillis / HOUR == seen.seenAtMillis / HOUR) {
+                    dao.removeSeen(newest.id)
+                }
+                dao.addSeen(
+                    LastSeenEntity(
+                        deviceIdHex = deviceIdHex,
+                        seenAtMillis = seen.seenAtMillis,
+                        latitude = seen.latitude,
+                        longitude = seen.longitude,
+                        accuracyMetres = seen.accuracyMetres,
+                        rssi = seen.rssi,
+                    )
+                )
+                dao.removeSeenBefore(seen.seenAtMillis - LAST_SEEN_DAYS * 24 * HOUR)
+            }
+        }
 
     /** Forgets every paired phone and creates new keys and a new beacon secret. */
     suspend fun reset() =
         withContext(io) {
             mutex.withLock {
+                dao.removeAllSeen()
                 dao.removeAllPeers()
                 dao.removeSelf()
                 KeystoreStaticKey.delete(staticAlias)
@@ -140,6 +185,8 @@ class IdentityRepository(
 
     companion object {
         const val BEACON_SECRET_SIZE = 32
+        const val LAST_SEEN_DAYS = 7L
+        private const val HOUR = 60 * 60 * 1_000L
 
         fun create(context: Context, defaultName: () -> String): IdentityRepository =
             IdentityRepository(IdentityDatabase.create(context).dao(), defaultName)

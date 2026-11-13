@@ -4,10 +4,12 @@
 package org.prauga.finder.identity
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
@@ -33,6 +35,18 @@ class PeerEntity(
     @ColumnInfo(name = "static_key") val staticPublicKey: ByteArray,
     @ColumnInfo(name = "beacon_secret") val sealedBeaconSecret: ByteArray,
     @ColumnInfo(name = "paired_at") val pairedAtMillis: Long,
+)
+
+/** Where this phone was when it heard a paired phone; location is null without permission. */
+@Entity(tableName = "last_seen", indices = [Index("device_id")])
+class LastSeenEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "device_id") val deviceIdHex: String,
+    @ColumnInfo(name = "seen_at") val seenAtMillis: Long,
+    val latitude: Double?,
+    val longitude: Double?,
+    @ColumnInfo(name = "accuracy_m") val accuracyMetres: Float?,
+    val rssi: Int,
 )
 
 @Dao
@@ -61,9 +75,30 @@ interface IdentityDao {
     @Query("DELETE FROM peers") suspend fun removeAllPeers()
 
     @Query("DELETE FROM self") suspend fun removeSelf()
+
+    @Query("SELECT * FROM last_seen WHERE device_id = :deviceIdHex ORDER BY seen_at DESC")
+    fun lastSeen(deviceIdHex: String): Flow<List<LastSeenEntity>>
+
+    @Query("SELECT * FROM last_seen WHERE device_id = :deviceIdHex ORDER BY seen_at DESC LIMIT 1")
+    suspend fun newestSeen(deviceIdHex: String): LastSeenEntity?
+
+    @Insert suspend fun addSeen(entry: LastSeenEntity)
+
+    @Query("DELETE FROM last_seen WHERE id = :id") suspend fun removeSeen(id: Long)
+
+    @Query("DELETE FROM last_seen WHERE seen_at < :before") suspend fun removeSeenBefore(before: Long)
+
+    @Query("DELETE FROM last_seen WHERE device_id = :deviceIdHex")
+    suspend fun removeSeenFor(deviceIdHex: String)
+
+    @Query("DELETE FROM last_seen") suspend fun removeAllSeen()
 }
 
-@Database(entities = [SelfEntity::class, PeerEntity::class], version = 1)
+@Database(
+    entities = [SelfEntity::class, PeerEntity::class, LastSeenEntity::class],
+    version = 2,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+)
 abstract class IdentityDatabase : RoomDatabase() {
     abstract fun dao(): IdentityDao
 
