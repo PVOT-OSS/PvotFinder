@@ -122,4 +122,27 @@ class IdentityRepositoryTest {
         assertFalse(before.deviceId.contentEquals(repository.self().deviceId))
         assertFalse(keyBefore.contentEquals(repository.staticKey().publicKey))
     }
+
+    @Test
+    fun lastSeenKeepsOnePerHourForAWeekAndGoesWithThePeer() = runTest {
+        val hour = 60 * 60 * 1_000L
+        val start = 1_000 * hour
+        fun seen(at: Long) = LastSeen(at, 12.9, 77.6, 20f, -50)
+        repository.addPeer(PairedPeer(PeerInfo(ByteArray(16) { 1 }, "p", "1"), ByteArray(32), ByteArray(32)))
+        val id = "01".repeat(16)
+
+        repository.recordSeen(id, seen(start))
+        repository.recordSeen(id, seen(start + 10 * 60_000))
+        repository.recordSeen(id, seen(start + hour))
+        assertEquals(
+            listOf(start + hour, start + 10 * 60_000),
+            repository.lastSeen(id).first().map { it.seenAtMillis },
+        )
+
+        repository.recordSeen(id, seen(start + 8 * 24 * hour))
+        assertEquals(listOf(start + 8 * 24 * hour), repository.lastSeen(id).first().map { it.seenAtMillis })
+
+        repository.removePeer(id)
+        assertTrue(repository.lastSeen(id).first().isEmpty())
+    }
 }
