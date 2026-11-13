@@ -5,6 +5,7 @@ package org.prauga.finder.bluetooth
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -27,12 +28,16 @@ import org.prauga.finder.bluetooth.protocol.DecodeResult
 import org.prauga.finder.bluetooth.protocol.FinderProtocol
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 
-/** One received advertisement. [elapsedMillis] is on the [SystemClock.elapsedRealtime] clock. */
+/**
+ * One received advertisement. [elapsedMillis] is on the [SystemClock.elapsedRealtime] clock;
+ * [device] is kept in memory only, to connect to it.
+ */
 data class Sighting(
     val temporaryId: TemporaryId,
     val rssi: Int,
     val elapsedMillis: Long,
     val txPower: Int?,
+    val device: BluetoothDevice? = null,
 )
 
 sealed interface ScannerState {
@@ -198,6 +203,7 @@ class AndroidBleScanner(
                         rssi = result.rssi,
                         elapsedMillis = result.timestampNanos / 1_000_000,
                         txPower = result.txPower.takeIf { it != ScanResult.TX_POWER_NOT_PRESENT },
+                        device = result.device,
                     )
                 _sightings.tryEmit(sighting)
             }

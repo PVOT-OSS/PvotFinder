@@ -3,6 +3,7 @@
 
 package org.prauga.finder.bluetooth
 
+import android.bluetooth.BluetoothDevice
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 
 data class RssiSample(val elapsedMillis: Long, val rssi: Int)
@@ -28,6 +29,7 @@ data class NearbyDevice(
     val lastSeenMillis: Long,
     val sightings: Int,
     val history: List<RssiSample>,
+    val device: BluetoothDevice? = null,
 )
 
 /** Devices heard recently; times are on the elapsed-realtime clock. */
@@ -55,6 +57,7 @@ class NearbyTracker(
                     lastSeenMillis = sighting.elapsedMillis,
                     sightings = 1,
                     history = listOf(sample),
+                    device = sighting.device,
                 )
             return true
         }
@@ -73,6 +76,7 @@ class NearbyTracker(
                 lastSeenMillis = lastSeen,
                 sightings = previous.sightings + 1,
                 history = history,
+                device = if (latest) sighting.device ?: previous.device else previous.device,
             )
         return false
     }
