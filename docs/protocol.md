@@ -106,7 +106,7 @@ ephemeral keys are software X25519 keys that never outlive the session.
                                           | A's static public key (32) | expires, unix seconds (8))
    ```
 
-   About 120 characters. Valid for **5 minutes**, for **one** completed pairing; three failed handshakes
+   132 characters. Valid for **5 minutes**, for **one** completed pairing; three failed handshakes
    also end it. The screen sets `FLAG_SECURE`, so the code stays out of screenshots and recent apps.
 2. A advertises §2.3 and runs the GATT server. Phone **B** (scanning) reads the QR with its camera,
    finds the advertisement whose hash matches `session_id`, connects and starts the handshake as
