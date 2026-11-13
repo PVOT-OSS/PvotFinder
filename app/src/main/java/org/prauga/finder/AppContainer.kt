@@ -32,7 +32,11 @@ import org.prauga.finder.finding.LocationFinder
 import org.prauga.finder.finding.PeerIds
 import org.prauga.finder.finding.Ringer
 import org.prauga.finder.identity.IdentityRepository
+import okhttp3.OkHttpClient
 import org.prauga.finder.pairing.PairingController
+import org.prauga.finder.reports.ReportFetcher
+import org.prauga.finder.reports.ReportSettings
+import org.prauga.finder.reports.Reporter
 
 class AppContainer(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -72,6 +76,14 @@ class AppContainer(context: Context) {
     val findable = Findable(context, discovery)
 
     val locations = LocationFinder(context)
+
+    private val http = OkHttpClient()
+
+    val reportSettings = ReportSettings(context)
+
+    val reporter = Reporter(context, reportSettings, identity, locations, http, diagnostics)
+
+    val reportFetcher = ReportFetcher(scope, reportSettings, identity, http, diagnostics)
 
     val ringer = Ringer(context, scope)
 

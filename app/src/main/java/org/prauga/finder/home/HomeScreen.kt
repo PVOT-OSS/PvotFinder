@@ -55,6 +55,7 @@ import org.prauga.finder.bluetooth.protocol.TemporaryId
 import org.prauga.finder.nearbyName
 import org.prauga.finder.finding.Findable
 import org.prauga.finder.identity.IdentityRepository
+import org.prauga.finder.reports.ReportSettings
 import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.scanErrorLabel
 import org.prauga.finder.shortLabel
@@ -66,6 +67,8 @@ private val timeoutOptions = listOf(10_000L, 30_000L, 60_000L)
 fun HomeScreen(
     discovery: DiscoveryController,
     findable: Findable,
+    reportSettings: ReportSettings,
+    onOpenBoards: () -> Unit,
     identity: IdentityRepository,
     onAddPhone: () -> Unit,
     onOpenPeer: (String) -> Unit,
@@ -133,6 +136,7 @@ fun HomeScreen(
             }
         }
         item { MyPhonesGroup(peers, nearby, onAddPhone, onOpenPeer) }
+        item { OnlineGroup(reportSettings, findableOn, onOpenBoards) }
         item {
             PvotListGroup(title = stringResource(R.string.section_discovery)) {
                 item {

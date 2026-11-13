@@ -17,6 +17,7 @@ import org.prauga.finder.pairing.AddPhoneScreen
 import org.prauga.finder.pairing.ScanCodeScreen
 import org.prauga.finder.pairing.ShowCodeScreen
 import org.prauga.finder.peers.PeerScreen
+import org.prauga.finder.reports.BoardsScreen
 
 @Serializable data object HomeKey : NavKey
 
@@ -31,6 +32,8 @@ import org.prauga.finder.peers.PeerScreen
 @Serializable data object ScanCodeKey : NavKey
 
 @Serializable data class PeerKey(val deviceIdHex: String) : NavKey
+
+@Serializable data object BoardsKey : NavKey
 
 @Composable
 fun FinderNavigation(container: AppContainer) {
@@ -47,6 +50,8 @@ fun FinderNavigation(container: AppContainer) {
                     HomeScreen(
                         discovery = container.discovery,
                         findable = container.findable,
+                        reportSettings = container.reportSettings,
+                        onOpenBoards = { backStack.add(BoardsKey) },
                         identity = container.identity,
                         onAddPhone = { backStack.add(AddPhoneKey) },
                         onOpenPeer = { backStack.add(PeerKey(it)) },
@@ -69,11 +74,13 @@ fun FinderNavigation(container: AppContainer) {
                 }
                 entry<ShowCodeKey> { ShowCodeScreen(container.pairing, backHome, back) }
                 entry<ScanCodeKey> { ScanCodeScreen(container.pairing, backHome, back) }
+                entry<BoardsKey> { BoardsScreen(container.reportSettings, back) }
                 entry<PeerKey> { key ->
                     PeerScreen(
                         container.identity,
                         container.discovery,
                         container.finder,
+                        container.reportFetcher,
                         key.deviceIdHex,
                         back,
                     )

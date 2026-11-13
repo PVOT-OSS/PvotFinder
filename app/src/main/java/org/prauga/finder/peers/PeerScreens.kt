@@ -29,6 +29,7 @@ import org.prauga.finder.bluetooth.DiscoveryController
 import org.prauga.finder.bluetooth.NearbyKey
 import org.prauga.finder.finding.Finder
 import org.prauga.finder.identity.IdentityRepository
+import org.prauga.finder.reports.ReportFetcher
 import org.prauga.finder.identity.Peer
 import org.prauga.finder.pairing.PeerInfo
 
@@ -37,6 +38,7 @@ fun PeerScreen(
     identity: IdentityRepository,
     discovery: DiscoveryController,
     finder: Finder,
+    fetcher: ReportFetcher,
     deviceIdHex: String,
     onBack: () -> Unit,
 ) {
@@ -54,6 +56,7 @@ fun PeerScreen(
         if (peer == null) return@SubScreen
         item { FindGroup(deviceIdHex, nearby, findStates[deviceIdHex], finder) }
         item { LastSeenCard(identity, deviceIdHex, peer.name) }
+        item { ReportsCard(identity, fetcher, deviceIdHex, peer.name) }
         item {
             PvotListGroup {
                 item {

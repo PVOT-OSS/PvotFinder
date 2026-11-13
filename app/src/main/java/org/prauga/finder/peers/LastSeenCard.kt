@@ -68,10 +68,12 @@ fun LastSeenCard(identity: IdentityRepository, deviceIdHex: String, peerName: St
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                if (newest.latitude != null && newest.longitude != null) {
+                val lat = newest.latitude
+                val lon = newest.longitude
+                if (lat != null && lon != null) {
                     PvotButton(
                         stringResource(R.string.open_in_maps),
-                        { openMap(context, newest, peerName) },
+                        { openMap(context, lat, lon, peerName) },
                         Modifier.fillMaxWidth(),
                         style = PvotButtonStyle.Tonal,
                     )
@@ -83,12 +85,17 @@ fun LastSeenCard(identity: IdentityRepository, deviceIdHex: String, peerName: St
             PvotListGroup(title = stringResource(R.string.last_seen_earlier)) {
                 earlier.forEach { entry ->
                     item {
-                        val located = entry.latitude != null && entry.longitude != null
+                        val lat = entry.latitude
+                        val lon = entry.longitude
                         PvotListRow(
                             title = time(context, entry.seenAtMillis),
                             supportingText = describe(context, entry),
                             onClick =
-                                if (located) ({ openMap(context, entry, peerName) }) else null,
+                                if (lat != null && lon != null) {
+                                    { openMap(context, lat, lon, peerName) }
+                                } else {
+                                    null
+                                },
                         )
                     }
                 }
@@ -110,7 +117,7 @@ private fun relative(millis: Long): String =
             .toString()
     }
 
-private fun time(context: Context, millis: Long): String =
+internal fun time(context: Context, millis: Long): String =
     DateUtils.formatDateTime(
         context,
         millis,
@@ -128,9 +135,9 @@ private fun describe(context: Context, entry: LastSeen): String {
     }
 }
 
-private fun openMap(context: Context, entry: LastSeen, label: String) {
-    val lat = String.format(Locale.ROOT, "%.6f", entry.latitude)
-    val lon = String.format(Locale.ROOT, "%.6f", entry.longitude)
+internal fun openMap(context: Context, latitude: Double, longitude: Double, label: String) {
+    val lat = String.format(Locale.ROOT, "%.6f", latitude)
+    val lon = String.format(Locale.ROOT, "%.6f", longitude)
     val uri = "geo:$lat,$lon?q=$lat,$lon(${Uri.encode(label)})".toUri()
     try {
         context.startActivity(Intent(Intent.ACTION_VIEW, uri))

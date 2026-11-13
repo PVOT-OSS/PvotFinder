@@ -167,4 +167,33 @@
     <string name="last_seen_no_location">%1$s, place unknown: Pvot Finder had no location permission</string>
     <string name="last_seen_earlier">Earlier, one per hour</string>
     <string name="open_in_maps">Open in map app</string>
+    <string name="section_online">Online</string>
+    <string name="report_online">Report this phone\'s location online</string>
+    <string name="report_online_off">Off. When on, your paired phones can see where this phone is from anywhere, as long as it has internet.</string>
+    <string name="report_online_needs_findable">Turn on \"Let my phones find this one\" too.</string>
+    <string name="report_online_needs_boards">Choose at least one notice board.</string>
+    <string name="report_online_on">Every 30 minutes, locked so only your paired phones can read it.</string>
+    <string name="boards">Notice boards</string>
+    <string name="boards_none">None</string>
+    <plurals name="boards_count">
+        <item quantity="one">%d board</item>
+        <item quantity="other">%d boards</item>
+    </plurals>
+    <string name="boards_intro">Reports are left on public notice boards (Nostr relays) for your other phones to pick up. Boards are run by other people. They see this phone\'s internet address and when it posts, but cannot read the locations or tell whose phone it is. Add the addresses of boards you trust.</string>
+    <string name="boards_address">Board address</string>
+    <string name="boards_add">Add board</string>
+    <string name="boards_remove">Remove board</string>
+    <string name="boards_invalid">Use an address starting with wss://</string>
+    <string name="reports_title">Reported online</string>
+    <string name="reports_hint">Where %1$s said it was, from the notice boards.</string>
+    <string name="reports_no_boards">Add a notice board on the home screen to see online reports.</string>
+    <string name="reports_working">Checking the notice boards</string>
+    <plurals name="reports_done">
+        <item quantity="one">Checked %1$d of %2$d board.</item>
+        <item quantity="other">Checked %1$d of %2$d boards.</item>
+    </plurals>
+    <string name="reports_none">%1$s has not reported in the last 7 days.</string>
+    <string name="reports_check">Check now</string>
+    <string name="report_line">Place accurate to about %1$d m</string>
+    <string name="report_line_battery">Place accurate to about %1$d m, battery %2$d%%</string>
 </resources>

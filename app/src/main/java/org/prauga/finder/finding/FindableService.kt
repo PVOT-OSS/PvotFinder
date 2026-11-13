@@ -13,6 +13,12 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.prauga.finder.FinderApplication
 import org.prauga.finder.MainActivity
 import org.prauga.finder.R
@@ -22,26 +28,31 @@ import org.prauga.finder.R
  * shown. Runs only while the user has "Let my phones find this one" on.
  */
 class FindableService : Service() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var reporting: Job? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val container = (application as FinderApplication).container
+        val reports = container.reportSettings.enabled.value && container.locations.hasPermission()
+        val types =
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or
+                if (reports) ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION else 0
         try {
-            ServiceCompat.startForeground(
-                this,
-                NOTIFICATION_ID,
-                notification(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
-            )
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), types)
         } catch (e: SecurityException) {
             stopSelf()
             return START_NOT_STICKY
         }
         container.discovery.setBackgroundAdvertising(true)
+        reporting?.cancel()
+        reporting = if (reports) scope.launch { container.reporter.run() } else null
         return START_STICKY
     }
 
     override fun onDestroy() {
+        scope.cancel()
         (application as FinderApplication).container.discovery.setBackgroundAdvertising(false)
         super.onDestroy()
     }
