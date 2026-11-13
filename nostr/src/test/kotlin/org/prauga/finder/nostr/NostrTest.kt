@@ -59,9 +59,9 @@ class NostrTest {
     @Test
     fun `publish waits for the relay's OK`() = runTest {
         val event = Event.create(3971, tags, "x", 1)
-        val socket = FakeSocket { listOf("""["NOTICE","hi"]""", """["OK","${event.id}",true,""]""") }
+        val socket = FakeSocket { listOf("""["NOTICE","hi"]""", """["OK","${event.id}",false,"blocked: kind"]""") }
 
-        assertTrue(RelayClient(socket).publish(event))
+        assertEquals(PublishResult(false, "blocked: kind"), RelayClient(socket).publish(event))
     }
 
     @Test

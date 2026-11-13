@@ -147,12 +147,15 @@ interface RelaySocket {
 
 class RelayException(message: String) : Exception(message)
 
+/** The relay's answer to a published event: stored or not, and its reason (NIP-01 `OK`). */
+data class PublishResult(val accepted: Boolean, val message: String)
+
 /** Talks NIP-01 to one relay over [socket], one request at a time. */
 class RelayClient(private val socket: RelaySocket) {
     private var next = 0
 
-    /** Returns true when the relay stored the event. */
-    suspend fun publish(event: Event): Boolean {
+    /** The relay's answer: whether it stored the event, and why not. */
+    suspend fun publish(event: Event): PublishResult {
         socket.send(buildJsonArray {
             add(JsonPrimitive("EVENT"))
             add(event.toJson())
@@ -160,7 +163,10 @@ class RelayClient(private val socket: RelaySocket) {
         while (true) {
             val message = parse(socket.receive()) ?: continue
             if (message.firstString() == "OK" && message.getOrNull(1)?.jsonPrimitive?.content == event.id) {
-                return message.getOrNull(2)?.jsonPrimitive?.content == "true"
+                return PublishResult(
+                    accepted = message.getOrNull(2)?.jsonPrimitive?.content == "true",
+                    message = message.getOrNull(3)?.jsonPrimitive?.content.orEmpty(),
+                )
             }
         }
     }

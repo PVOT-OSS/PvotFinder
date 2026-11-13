@@ -63,15 +63,20 @@ class Reporter(
                 withTimeout(TIMEOUT_MILLIS) {
                     val client = RelayClient(OkHttpRelaySocket.connect(http, board))
                     try {
-                        if (client.publish(event)) stored++
+                        val result = client.publish(event)
+                        if (result.accepted) stored++
+                        log.add(
+                            DiagnosticEvent.Kind.ADVERTISER,
+                            "${host(board)}: ${if (result.accepted) "stored" else "refused"} ${result.message}",
+                        )
                     } finally {
                         client.close()
                     }
                 }
             } catch (e: IOException) {
-                log.add(DiagnosticEvent.Kind.ERROR, "Report to a board failed: ${e.message}")
+                log.add(DiagnosticEvent.Kind.ERROR, "${host(board)}: failed, ${e.message}")
             } catch (e: TimeoutCancellationException) {
-                log.add(DiagnosticEvent.Kind.ERROR, "Report to a board timed out")
+                log.add(DiagnosticEvent.Kind.ERROR, "${host(board)}: timed out")
             }
         }
         log.add(
@@ -80,6 +85,8 @@ class Reporter(
         )
         return true
     }
+
+    private fun host(board: String): String = board.substringAfter("://").substringBefore('/')
 
     private fun battery(): Int? =
         context
