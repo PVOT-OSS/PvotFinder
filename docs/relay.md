@@ -13,13 +13,15 @@ over public Nostr relays that anyone can run, and users can choose their own.
 | step | what | network |
 |---|---|---|
 | M4a | **Last seen by my phones**: a paired phone that hears another stores where and when | none |
+| M4s | **Self reports**: a phone with internet posts its own location for its paired phones (§1b) | internet |
 | M4b | **Unwanted-tracking protection** (protocol §5): separated mode, detection, identify and ring | none |
 | M4c | **Reports**: per-period public keys, extended advertising, encrypted sightings queued on relays | none yet |
 | M4d | **Transport**: publish and fetch reports through Nostr relays | internet |
 | M4e | **Owner view**: where a phone was reported, how sure, open in a map app | — |
 
 M4b must ship before M4d is switched on for anyone: relaying is where a hidden phone becomes a
-tracker.
+tracker. M4s comes first because a new app has almost no passers-by to relay, while a lost phone
+usually still has mobile data (maintainer, 2026-11-13). It uses the transport of §4 but no strangers.
 
 ## 1. M4a — Last seen by my phones
 
@@ -32,6 +34,28 @@ tracker.
   "while using the app" is enough. `BLUETOOTH_SCAN` loses `neverForLocation`, because scan results now
   lead to a location. Android may then show scanning as location use; the permission text says why.
 - No new keys, nothing leaves the phone.
+
+## 1b. M4s — The phone reports itself
+
+While "Let my phones find this one" is on and the user has allowed internet reports, the phone posts
+its own location every 30 minutes (and once when it gets a connection after being offline).
+
+- Per period `i` (protocol §3): `seed_i = HMAC-SHA256(B, "PvotFinder self v1" || be32(i))`,
+  `key_i = HMAC-SHA256(seed_i, "key")`, `tag_i = Trunc_16(HMAC-SHA256(seed_i, "tag"))`.
+- `plaintext = version = 1 (1) | latitude × 1e7 (int32) | longitude × 1e7 (int32) | accuracy, metres
+  (uint16) | taken, unix seconds (uint32) | battery % (uint8)`, 16 bytes.
+- `report = nonce (12, random) | ChaCha20-Poly1305(key_i, nonce, ad = tag_i, plaintext)`, 44 bytes.
+- Only phones holding `B`, the phone itself and its paired phones, can read **or create** a report. A
+  stranger cannot post a fake location, unlike relay reports (§3).
+- Posted as a Nostr event (§4) with tag `["y", hex(tag_i)]` and kind **3971** (provisional, unregistered),
+  signed with a fresh key per event, expiring after 7 days.
+- The owner's phone asks the boards for `tag_j` of each paired phone over the last 7 days (about 600
+  per phone, in batches) and keeps what decrypts.
+- The board operator sees one event every 30 minutes from the phone's IP address. Tags change every
+  period and cannot be linked without `B`, but the IP address and the regular timing can.
+- Needs: `INTERNET`; location while the app is not on screen, which comes from adding the `location`
+  type to the existing foreground service (allowed because the service is started from the app).
+- Defaults: no public board is contacted until the user has chosen the boards to use.
 
 ## 2. M4b — Unwanted-tracking protection
 
