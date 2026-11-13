@@ -5,5 +5,8 @@
 -->
 <resources>
 
-    <style name="Theme.Finder" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.Finder" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+    </style>
 </resources>
