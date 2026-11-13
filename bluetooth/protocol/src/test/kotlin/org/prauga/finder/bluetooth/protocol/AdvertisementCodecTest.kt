@@ -15,7 +15,7 @@ class AdvertisementCodecTest {
     fun `encodes version, flags and the ID in ten bytes`() {
         val bytes = AdvertisementCodec.encode(AdvertisementPayload(id, flags = 0x81))
 
-        assertArrayEquals(byteArrayOf(0, 0x81.toByte(), 1, 2, 3, 4, 5, 6, 7, -1), bytes)
+        assertArrayEquals(byteArrayOf(1, 0x81.toByte(), 1, 2, 3, 4, 5, 6, 7, -1), bytes)
         assertEquals(FinderProtocol.PAYLOAD_SIZE, bytes.size)
     }
 
@@ -42,7 +42,7 @@ class AdvertisementCodecTest {
 
     @Test
     fun `rejects other versions`() {
-        val data = AdvertisementCodec.encode(AdvertisementPayload(id)).also { it[0] = 1 }
+        val data = AdvertisementCodec.encode(AdvertisementPayload(id)).also { it[0] = 0 }
 
         assertEquals(
             DecodeResult.Invalid(DecodeResult.Reason.UNSUPPORTED_VERSION),

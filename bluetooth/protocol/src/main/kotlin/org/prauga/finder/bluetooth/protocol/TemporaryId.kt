@@ -5,7 +5,7 @@ package org.prauga.finder.bluetooth.protocol
 
 import java.security.SecureRandom
 
-/** A random identifier a device advertises for one session; never tied to the device itself. */
+/** An 8-byte advertised identifier: rotating for paired phones, random in tests. */
 class TemporaryId(bytes: ByteArray) {
     private val value = bytes.copyOf()
 
