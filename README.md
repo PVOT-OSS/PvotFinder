@@ -9,25 +9,36 @@ Samsung finding networks.
 
 ## What it does today
 
-Two phones with Pvot Finder find each other directly over Bluetooth, with no internet connection:
+Your own phones find each other directly over Bluetooth, with no internet connection and no server.
 
-- **Make this phone visible** advertises a random temporary ID, new each time advertising starts.
-- **Look for nearby phones** lists other phones running Pvot Finder with their signal strength (RSSI)
-  and when they were last heard. A phone drops off the list after 10, 30 or 60 seconds of silence.
-- Tapping a phone shows its signal over the last minute.
-- **Diagnostics** shows the Bluetooth, permission, advertiser and scanner state and the raw events,
-  and copies them for bug reports.
+- **Pair** two phones by showing a QR code on one and scanning it with the other, then checking that
+  both show the same 6-digit code. Pairing uses the Noise protocol; see [docs/protocol.md](docs/protocol.md).
+- **Let my phones find this one** makes the phone advertise an identifier that changes every ~17
+  minutes and that only its paired phones can recognise. It keeps working in the background, with a
+  notification saying so.
+- **Look for nearby phones** shows your paired phones as "maybe nearby" when their identifier is
+  heard, with signal strength. **Check it is really there** connects and makes the phone prove it holds
+  its key ("verified nearby").
+- **Play sound** makes a paired phone ring at alarm volume for 30 seconds, always with a notification
+  that stops it. A phone that cannot show that notification refuses to ring.
+- **Diagnostics** shows the Bluetooth, permission, advertiser and scanner state and the raw events.
 
 ## Limits
 
-- **Testing only.** The current advertisement is a development format: a random ID with no
-  cryptography. It is not the protection the finished protocol will give, and anyone scanning can see
-  that a Pvot Finder phone is nearby.
-- **Foreground only.** Advertising and scanning stop when the app leaves the screen.
+- **Direct range only.** A phone is found only within Bluetooth range of one of your other phones.
+  Relaying through other people's phones is designed but not built.
+- Anyone scanning can see that *a* Pvot Finder phone is nearby, and can follow one identifier for up
+  to a period. See [docs/threat-model.md](docs/threat-model.md).
+- **Looking happens in the foreground**: scanning stops when the app leaves the screen. Being findable
+  continues in the background, but stops if the app is force-stopped or the phone is off, and does not
+  restart after a reboot yet.
 - Signal strength is a rough sign of closeness, not a distance.
+- Whoever holds one of your unlocked phones can find your others; after losing a phone, use
+  **Reset Pvot Finder** on the remaining ones and pair again.
 - Needs Android 13 or newer and Bluetooth LE advertising support.
-- The app asks only for the Nearby devices permission (`BLUETOOTH_SCAN` with `neverForLocation`,
-  `BLUETOOTH_ADVERTISE`) and has no internet permission.
+- Permissions: Nearby devices (`BLUETOOTH_SCAN` with `neverForLocation`, `BLUETOOTH_ADVERTISE`,
+  `BLUETOOTH_CONNECT`), Camera (scanning a pairing code only), Notifications (ringing), and a
+  connected-device foreground service. No internet permission.
 
 ## Building
 
