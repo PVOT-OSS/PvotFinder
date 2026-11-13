@@ -16,7 +16,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.prauga.finder.bluetooth.DiagnosticEvent
 import org.prauga.finder.bluetooth.DiagnosticsLog
 import org.prauga.finder.bluetooth.pairing.PairingClient
-import org.prauga.finder.bluetooth.pairing.PairingLink
+import org.prauga.finder.bluetooth.gatt.MessageLink
 import org.prauga.finder.bluetooth.pairing.PairingServer
 import org.prauga.finder.identity.IdentityRepository
 
@@ -160,7 +160,7 @@ class PairingController(
 
     /** Returns null once paired, or why it failed. */
     private suspend fun runSession(
-        link: PairingLink,
+        link: MessageLink,
         session: suspend () -> PairingSession,
     ): PairingState.Reason? =
         try {
