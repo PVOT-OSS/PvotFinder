@@ -3,6 +3,7 @@
 
 package org.prauga.finder.identity
 
+import android.content.Context
 import java.security.SecureRandom
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -127,6 +128,10 @@ class IdentityRepository(
 
     companion object {
         const val BEACON_SECRET_SIZE = 32
+
+        fun create(context: Context, defaultName: () -> String): IdentityRepository =
+            IdentityRepository(IdentityDatabase.create(context).dao(), defaultName)
+
         private const val STATIC_ALIAS = "finder-static"
         private const val BOX_ALIAS = "finder-box"
         private val SELF_LABEL = "self".toByteArray()

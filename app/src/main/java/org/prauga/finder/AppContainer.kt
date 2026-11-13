@@ -5,7 +5,9 @@ package org.prauga.finder
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,10 +17,17 @@ import org.prauga.finder.bluetooth.AndroidBleScanner
 import org.prauga.finder.bluetooth.BluetoothPermissions
 import org.prauga.finder.bluetooth.DiagnosticsLog
 import org.prauga.finder.bluetooth.DiscoveryController
+import org.prauga.finder.bluetooth.ScanStartGuard
+import org.prauga.finder.bluetooth.pairing.PairingClient
+import org.prauga.finder.bluetooth.pairing.PairingServer
+import org.prauga.finder.identity.IdentityRepository
+import org.prauga.finder.pairing.PairingController
 
 class AppContainer(context: Context) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
+    private val manager = context.getSystemService(BluetoothManager::class.java)
+    private val adapter = manager?.adapter
+    private val scanGuard = ScanStartGuard()
 
     val diagnostics = DiagnosticsLog()
     private val permissions = BluetoothPermissions(context)
@@ -29,8 +38,27 @@ class AppContainer(context: Context) {
             adapterStates = AdapterStateSource(context, adapter).states,
             permissionSource = permissions::current,
             advertiser = AndroidBleAdvertiser(adapter, permissions, diagnostics),
-            scanner = AndroidBleScanner(adapter, permissions, diagnostics, scope),
+            scanner = AndroidBleScanner(adapter, permissions, diagnostics, scope, guard = scanGuard),
             log = diagnostics,
             elapsedClock = SystemClock::elapsedRealtime,
+        )
+
+    val identity =
+        IdentityRepository.create(
+            context,
+            defaultName = {
+                Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
+                    ?: Build.MODEL
+            },
+        )
+
+    val pairing =
+        PairingController(
+            scope = scope,
+            identity = identity,
+            newServer = { PairingServer(context, requireNotNull(manager), diagnostics) },
+            client = PairingClient(context, requireNotNull(manager), scanGuard, diagnostics),
+            log = diagnostics,
+            appVersion = BuildConfig.VERSION_NAME,
         )
 }

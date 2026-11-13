@@ -13,6 +13,10 @@ import kotlinx.serialization.Serializable
 import org.prauga.finder.device.DeviceScreen
 import org.prauga.finder.diagnostics.DiagnosticsScreen
 import org.prauga.finder.home.HomeScreen
+import org.prauga.finder.pairing.AddPhoneScreen
+import org.prauga.finder.pairing.ScanCodeScreen
+import org.prauga.finder.pairing.ShowCodeScreen
+import org.prauga.finder.peers.PeerScreen
 
 @Serializable data object HomeKey : NavKey
 
@@ -20,10 +24,19 @@ import org.prauga.finder.home.HomeScreen
 
 @Serializable data object DiagnosticsKey : NavKey
 
+@Serializable data object AddPhoneKey : NavKey
+
+@Serializable data object ShowCodeKey : NavKey
+
+@Serializable data object ScanCodeKey : NavKey
+
+@Serializable data class PeerKey(val deviceIdHex: String) : NavKey
+
 @Composable
 fun FinderNavigation(container: AppContainer) {
     val backStack = rememberNavBackStack(HomeKey)
     val back: () -> Unit = { backStack.removeLastOrNull() }
+    val backHome: () -> Unit = { backStack.retainAll { it == HomeKey } }
     NavDisplay(
         backStack = backStack,
         onBack = back,
@@ -33,6 +46,9 @@ fun FinderNavigation(container: AppContainer) {
                 entry<HomeKey> {
                     HomeScreen(
                         discovery = container.discovery,
+                        identity = container.identity,
+                        onAddPhone = { backStack.add(AddPhoneKey) },
+                        onOpenPeer = { backStack.add(PeerKey(it)) },
                         onOpenDevice = { backStack.add(DeviceKey(it.toHex())) },
                         onOpenDiagnostics = { backStack.add(DiagnosticsKey) },
                     )
@@ -41,6 +57,16 @@ fun FinderNavigation(container: AppContainer) {
                 entry<DiagnosticsKey> {
                     DiagnosticsScreen(container.discovery, container.diagnostics, back)
                 }
+                entry<AddPhoneKey> {
+                    AddPhoneScreen(
+                        onShowCode = { backStack.add(ShowCodeKey) },
+                        onScanCode = { backStack.add(ScanCodeKey) },
+                        onBack = back,
+                    )
+                }
+                entry<ShowCodeKey> { ShowCodeScreen(container.pairing, backHome, back) }
+                entry<ScanCodeKey> { ScanCodeScreen(container.pairing, backHome, back) }
+                entry<PeerKey> { key -> PeerScreen(container.identity, key.deviceIdHex, back) }
             },
     )
 }

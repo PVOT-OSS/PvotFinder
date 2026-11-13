@@ -46,6 +46,7 @@ import org.prauga.finder.bluetooth.NearbyDevice
 import org.prauga.finder.bluetooth.ScannerState
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 import org.prauga.finder.deviceName
+import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.scanErrorLabel
 import org.prauga.finder.shortLabel
@@ -56,9 +57,13 @@ private val timeoutOptions = listOf(10_000L, 30_000L, 60_000L)
 @Composable
 fun HomeScreen(
     discovery: DiscoveryController,
+    identity: IdentityRepository,
+    onAddPhone: () -> Unit,
+    onOpenPeer: (String) -> Unit,
     onOpenDevice: ((TemporaryId) -> Unit)? = null,
     onOpenDiagnostics: (() -> Unit)? = null,
 ) {
+    val peers by identity.peers.collectAsStateWithLifecycle(emptyList())
     val status by discovery.status.collectAsStateWithLifecycle()
     val nearby by discovery.nearby.collectAsStateWithLifecycle()
     val timeout by discovery.timeoutMillis.collectAsStateWithLifecycle()
@@ -115,6 +120,7 @@ fun HomeScreen(
                 }
             }
         }
+        item { MyPhonesGroup(peers, onAddPhone, onOpenPeer) }
         item {
             PvotListGroup(title = stringResource(R.string.section_discovery)) {
                 item {
@@ -158,6 +164,7 @@ fun HomeScreen(
             }
         }
         item { NearbyList(nearby, status.wantScanning, now, onOpenDevice) }
+        item { ThisPhoneGroup(identity) }
     }
 }
 
