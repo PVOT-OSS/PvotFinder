@@ -7,7 +7,7 @@ SPDX-PackageSupplier = "Saalim Quadri <danascape@gmail.com>"
 SPDX-PackageDownloadLocation = "https://github.com/PVOT-OSS/PvotSeek"
 
 [[annotations]]
-path = "gradle/gradle-daemon-jvm.properties"
+path = ["gradle/gradle-daemon-jvm.properties", "identity/schemas/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

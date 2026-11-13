@@ -37,6 +37,8 @@ include(":bluetooth")
 
 include(":bluetooth:protocol")
 
+include(":identity")
+
 include(":noise")
 
 include(":pairing")
