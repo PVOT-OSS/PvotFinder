@@ -99,6 +99,8 @@ class IdentityRepositoryTest {
         val stored = database.dao().peer(peer.deviceIdHex)!!
         assertFalse(stored.sealedBeaconSecret.contentEquals(ByteArray(32) { 2 }))
 
+        assertArrayEquals(ByteArray(32) { 2 }, repository.peerSecrets().getValue(peer.deviceIdHex))
+
         repository.renamePeer(peer.deviceIdHex, "  Work phone  ")
         assertEquals("Work phone", repository.peers.first().single().name)
 

@@ -45,6 +45,8 @@ interface IdentityDao {
 
     @Query("SELECT * FROM peers ORDER BY paired_at") fun peers(): Flow<List<PeerEntity>>
 
+    @Query("SELECT * FROM peers") suspend fun peerList(): List<PeerEntity>
+
     @Query("SELECT * FROM peers WHERE device_id = :deviceIdHex")
     suspend fun peer(deviceIdHex: String): PeerEntity?
 

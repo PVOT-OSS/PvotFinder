@@ -88,6 +88,14 @@ class IdentityRepository(
             )
         }
 
+    /** Each paired phone's beacon secret by device ID, opened for deriving its identifiers. */
+    suspend fun peerSecrets(): Map<String, ByteArray> =
+        withContext(io) {
+            dao.peerList().associate {
+                it.deviceIdHex to box().open(it.sealedBeaconSecret, PEER_LABEL + it.deviceIdHex.hexToBytes())
+            }
+        }
+
     suspend fun renamePeer(deviceIdHex: String, name: String) =
         withContext(io) { dao.renamePeer(deviceIdHex, name.trim().take(PeerInfo.MAX_TEXT)) }
 
@@ -140,3 +148,6 @@ class IdentityRepository(
 }
 
 fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+
+internal fun String.hexToBytes(): ByteArray =
+    ByteArray(length / 2) { substring(2 * it, 2 * it + 2).toInt(16).toByte() }
