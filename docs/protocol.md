@@ -132,10 +132,18 @@ Pairing is **pairwise**. Pairing A–B and A–C does not make B and C peers (**
 When phone O matches a peer's `eid_i`, it can connect and run `KK` as initiator. Both statics are
 known from pairing. Prologue: `"PvotFinder find v1" || eid_i`.
 
+- `KK`'s first message does not say who is asking, and saying so in clear would let listeners link
+  sessions. The found phone therefore tries each paired phone's static key with each identifier it
+  advertised in the last periods (`i-1 .. i+1`) until message 1 decrypts. With a handful of paired
+  phones this costs a few dozen X25519 operations.
 - A completed handshake proves the phone holds that peer's static key: the UI goes from "maybe
   nearby" (advertisement only) to "verified nearby".
-- Transport messages: `Ring { until }` → the found phone plays a loud sound with a full-screen,
-  dismissable notification saying which of the owner's phones asked; `StopRing`; `Unpair` (§7).
+- Transport messages, one byte of type then arguments, each answered with one byte (`OK`,
+  `REFUSED`, `UNKNOWN`): `Ping` (proves the session, nothing visible); `Ring { seconds, 1..60 }` →
+  the found phone plays a loud sound with a dismissable notification saying which of the owner's
+  phones asked; `StopRing`. `Unpair` (§7) is not implemented yet.
+- The finding GATT service uses the advertisement's service UUID, with characteristic
+  `ef23f22f-df24-447f-95b0-ed4c15a5a9e2`. Advertisements are connectable from version 1.
 - Each session has new ephemeral keys, so recorded sessions cannot be replayed.
 - No microphone, camera, location or file access is reachable through this channel.
 
