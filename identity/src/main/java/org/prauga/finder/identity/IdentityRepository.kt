@@ -33,6 +33,16 @@ data class LastSeen(
     val rssi: Int,
 )
 
+/** A location a paired phone reported about itself over the internet. */
+data class Report(
+    val eventId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val accuracyMetres: Int,
+    val takenAtSeconds: Long,
+    val batteryPercent: Int?,
+)
+
 /** A paired phone, without its secret. */
 data class Peer(
     val deviceIdHex: String,
@@ -115,7 +125,36 @@ class IdentityRepository(
     suspend fun removePeer(deviceIdHex: String) =
         withContext(io) {
             dao.removeSeenFor(deviceIdHex)
+            dao.removeReportsFor(deviceIdHex)
             dao.removePeer(deviceIdHex)
+        }
+
+    fun reports(deviceIdHex: String): Flow<List<Report>> =
+        dao.reports(deviceIdHex).map { list ->
+            list.map {
+                Report(it.eventId, it.latitude, it.longitude, it.accuracyMetres, it.takenAtSeconds, it.battery)
+            }
+        }
+
+    /**
+     * Stores a report once per event, dropping reports older than [LAST_SEEN_DAYS] days. Returns
+     * false when the event was already stored.
+     */
+    suspend fun addReport(deviceIdHex: String, report: Report, nowSeconds: Long): Boolean =
+        withContext(io) {
+            val row = dao.addReport(
+                ReportEntity(
+                    deviceIdHex = deviceIdHex,
+                    eventId = report.eventId,
+                    latitude = report.latitude,
+                    longitude = report.longitude,
+                    accuracyMetres = report.accuracyMetres,
+                    takenAtSeconds = report.takenAtSeconds,
+                    battery = report.batteryPercent,
+                )
+            )
+            dao.removeReportsBefore(nowSeconds - LAST_SEEN_DAYS * 24 * 60 * 60)
+            row != -1L
         }
 
     /** Newest first: the latest sighting, then one per hour for [LAST_SEEN_DAYS] days. */
@@ -154,6 +193,7 @@ class IdentityRepository(
         withContext(io) {
             mutex.withLock {
                 dao.removeAllSeen()
+                dao.removeAllReports()
                 dao.removeAllPeers()
                 dao.removeSelf()
                 KeystoreStaticKey.delete(staticAlias)

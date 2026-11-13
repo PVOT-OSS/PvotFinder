@@ -49,6 +49,19 @@ class LastSeenEntity(
     val rssi: Int,
 )
 
+/** A location a paired phone reported about itself over the internet; one row per event. */
+@Entity(tableName = "reports", indices = [Index("device_id"), Index(value = ["event_id"], unique = true)])
+class ReportEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "device_id") val deviceIdHex: String,
+    @ColumnInfo(name = "event_id") val eventId: String,
+    val latitude: Double,
+    val longitude: Double,
+    @ColumnInfo(name = "accuracy_m") val accuracyMetres: Int,
+    @ColumnInfo(name = "taken_at") val takenAtSeconds: Long,
+    val battery: Int?,
+)
+
 @Dao
 interface IdentityDao {
     @Query("SELECT * FROM self WHERE id = 0") suspend fun self(): SelfEntity?
@@ -92,12 +105,25 @@ interface IdentityDao {
     suspend fun removeSeenFor(deviceIdHex: String)
 
     @Query("DELETE FROM last_seen") suspend fun removeAllSeen()
+
+    @Query("SELECT * FROM reports WHERE device_id = :deviceIdHex ORDER BY taken_at DESC")
+    fun reports(deviceIdHex: String): Flow<List<ReportEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun addReport(report: ReportEntity): Long
+
+    @Query("DELETE FROM reports WHERE taken_at < :beforeSeconds")
+    suspend fun removeReportsBefore(beforeSeconds: Long)
+
+    @Query("DELETE FROM reports WHERE device_id = :deviceIdHex")
+    suspend fun removeReportsFor(deviceIdHex: String)
+
+    @Query("DELETE FROM reports") suspend fun removeAllReports()
 }
 
 @Database(
-    entities = [SelfEntity::class, PeerEntity::class, LastSeenEntity::class],
-    version = 2,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    entities = [SelfEntity::class, PeerEntity::class, LastSeenEntity::class, ReportEntity::class],
+    version = 3,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class IdentityDatabase : RoomDatabase() {
     abstract fun dao(): IdentityDao
