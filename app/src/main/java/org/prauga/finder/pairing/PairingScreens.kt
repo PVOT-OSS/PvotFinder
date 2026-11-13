@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -151,7 +152,7 @@ fun ScanCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: ()
 
 @Composable
 private fun ShowingCode(state: PairingState.Showing) {
-    var now by remember { mutableStateOf(System.currentTimeMillis() / 1_000) }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1_000) }
     LaunchedEffect(state.expiresAtSeconds) {
         while (true) {
             now = System.currentTimeMillis() / 1_000

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,7 +52,7 @@ fun MyPhonesGroup(peers: List<Peer>, onAddPhone: () -> Unit, onOpenPeer: (String
 fun ThisPhoneGroup(identity: IdentityRepository) {
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf<String?>(null) }
-    var version by remember { mutableStateOf(0) }
+    var version by remember { mutableIntStateOf(0) }
     var renaming by remember { mutableStateOf(false) }
     var resetting by remember { mutableStateOf(false) }
     LaunchedEffect(version) { name = identity.self().name }
