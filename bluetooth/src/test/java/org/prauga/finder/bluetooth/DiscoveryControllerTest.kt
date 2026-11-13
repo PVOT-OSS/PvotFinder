@@ -16,6 +16,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.prauga.finder.bluetooth.protocol.AdvertisementPayload
+import org.prauga.finder.bluetooth.protocol.RotatingId
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -71,6 +72,8 @@ class DiscoveryControllerTest {
     private val scanner = FakeScanner()
     private var now = 0L
     private var nextId = 0
+    private val idRequests = mutableListOf<Long>()
+    private val wallStart = 10L * RotatingId.PERIOD_SECONDS + 1_000
 
     private fun TestScope.controller(): DiscoveryController =
         DiscoveryController(
@@ -81,7 +84,11 @@ class DiscoveryControllerTest {
             scanner = scanner,
             log = DiagnosticsLog(logcat = false),
             elapsedClock = { now },
-            newId = { TemporaryId(ByteArray(TemporaryId.SIZE) { (nextId++).toByte() }) },
+            advertisedId = { seconds ->
+                idRequests += seconds
+                TemporaryId(ByteArray(TemporaryId.SIZE) { (nextId++).toByte() })
+            },
+            wallSeconds = { wallStart + testScheduler.currentTime / 1_000 },
         )
 
     private fun runControllerTest(body: suspend TestScope.(DiscoveryController) -> Unit) =
@@ -177,5 +184,52 @@ class DiscoveryControllerTest {
         advanceTimeBy(1_000)
         runCurrent()
         assertTrue(c.nearby.value.isEmpty())
+    }
+
+    @Test
+    fun `advertising restarts with a new identifier when the period ends`() = runControllerTest { c ->
+        c.setForeground(true)
+        c.setAdvertising(true)
+        assertEquals(1, advertiser.started.size)
+
+        advanceTimeBy(23_000)
+        runCurrent()
+        assertEquals(1, advertiser.started.size)
+
+        advanceTimeBy(1_501)
+        runCurrent()
+        assertEquals(2, advertiser.started.size)
+        assertEquals(1, advertiser.stops)
+        assertEquals(RotatingId.period(idRequests[0]) + 1, RotatingId.period(idRequests[1]))
+        assertNotEquals(advertiser.started[0].temporaryId, advertiser.started[1].temporaryId)
+    }
+
+    @Test
+    fun `background advertising keeps advertising without a screen but stops scanning`() =
+        runControllerTest { c ->
+            c.setAdvertising(true)
+            c.setScanning(true)
+            c.setBackgroundAdvertising(true)
+
+            assertEquals(1, advertiser.started.size)
+            assertEquals(0, scanner.starts)
+        }
+
+    @Test
+    fun `sightings of a paired phone are grouped under it`() = runControllerTest { c ->
+        val first = TemporaryId(ByteArray(TemporaryId.SIZE) { 1 })
+        val second = TemporaryId(ByteArray(TemporaryId.SIZE) { 2 })
+        val stranger = TemporaryId(ByteArray(TemporaryId.SIZE) { 3 })
+        c.resolver = PeerResolver { if (it == first || it == second) "peer" else null }
+
+        scanner.sightings.emit(Sighting(first, -60, elapsedMillis = 0, txPower = null))
+        scanner.sightings.emit(Sighting(second, -50, elapsedMillis = 10, txPower = null))
+        scanner.sightings.emit(Sighting(stranger, -70, elapsedMillis = 20, txPower = null))
+
+        assertEquals(
+            listOf(NearbyKey.Peer("peer"), NearbyKey.Unknown(stranger)),
+            c.nearby.value.map { it.key },
+        )
+        assertEquals(second, c.nearby.value.first().advertisedId)
     }
 }

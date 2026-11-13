@@ -11,6 +11,8 @@ import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.delay
 import org.prauga.finder.bluetooth.AdapterState
 import org.prauga.finder.bluetooth.AdvertiseError
+import org.prauga.finder.bluetooth.NearbyDevice
+import org.prauga.finder.bluetooth.NearbyKey
 import org.prauga.finder.bluetooth.ScanError
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 
@@ -29,8 +31,20 @@ fun rememberElapsedNow(): Long {
 
 fun TemporaryId.shortLabel(): String = toHex().take(8).uppercase().chunked(4).joinToString(" ")
 
+/** A stable string for a nearby device, for navigation. */
+fun NearbyKey.asString(): String =
+    when (this) {
+        is NearbyKey.Peer -> "peer:$deviceIdHex"
+        is NearbyKey.Unknown -> "id:${id.toHex()}"
+    }
+
+/** A paired phone by its name, anything else as an unknown Pvot Finder phone. */
 @Composable
-fun deviceName(id: TemporaryId): String = stringResource(R.string.device_name, id.shortLabel())
+fun nearbyName(device: NearbyDevice, peerNames: Map<String, String>): String =
+    when (val key = device.key) {
+        is NearbyKey.Peer -> peerNames[key.deviceIdHex] ?: stringResource(R.string.device)
+        is NearbyKey.Unknown -> stringResource(R.string.device_unknown, key.id.shortLabel())
+    }
 
 @Composable
 fun timeAgo(now: Long, then: Long): String {

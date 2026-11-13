@@ -4,6 +4,7 @@
 package org.prauga.finder.bluetooth
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.prauga.finder.bluetooth.protocol.AdvertisementPayload
+import org.prauga.finder.bluetooth.protocol.RotatingId
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 
 data class DiscoveryStatus(
@@ -47,9 +49,19 @@ class DiscoveryController(
     private val scanner: BleScanner,
     private val log: DiagnosticsLog,
     private val elapsedClock: () -> Long,
-    private val newId: () -> TemporaryId = { TemporaryId.random() },
+    private val advertisedId: suspend (unixSeconds: Long) -> TemporaryId? = {
+        TemporaryId.random()
+    },
+    private val wallSeconds: () -> Long = { System.currentTimeMillis() / 1_000 },
     private val tickMillis: Long = 1_000,
 ) {
+    /** Maps received identifiers to paired phones; set by whoever knows the peers. */
+    @Volatile var resolver: PeerResolver = PeerResolver { null }
+
+    private val background = MutableStateFlow(false)
+    private var startJob: Job? = null
+    private var rotationJob: Job? = null
+
     private val adapter = MutableStateFlow(AdapterState.OFF)
     private val permissions = MutableStateFlow(permissionSource())
     private val foreground = MutableStateFlow(false)
@@ -60,7 +72,7 @@ class DiscoveryController(
     val timeoutMillis: StateFlow<Long> = _timeoutMillis.asStateFlow()
 
     private val tracker = NearbyTracker()
-    private val lastLogged = HashMap<TemporaryId, Long>()
+    private val lastLogged = HashMap<NearbyKey, Long>()
     private val _nearby = MutableStateFlow<List<NearbyDevice>>(emptyList())
     val nearby: StateFlow<List<NearbyDevice>> = _nearby.asStateFlow()
 
@@ -117,6 +129,12 @@ class DiscoveryController(
         reconcile()
     }
 
+    /** Lets advertising continue while no screen is shown, for the foreground service. */
+    fun setBackgroundAdvertising(on: Boolean) {
+        background.value = on
+        reconcile()
+    }
+
     fun setTimeout(millis: Long) {
         _timeoutMillis.value = millis
         prune()
@@ -135,6 +153,12 @@ class DiscoveryController(
         reconcile()
     }
 
+    private fun advertisingAllowed(): Boolean =
+        adapter.value == AdapterState.ON &&
+            (foreground.value || background.value) &&
+            wantAdvertising.value &&
+            permissions.value.canAdvertise
+
     private fun reconcile() {
         val on = adapter.value == AdapterState.ON
         val ready = on && foreground.value
@@ -143,10 +167,14 @@ class DiscoveryController(
         val advertising =
             advertiserState is AdvertiserState.Starting ||
                 advertiserState is AdvertiserState.Advertising
-        if (wantAdvertising.value && ready && permissions.value.canAdvertise) {
-            if (!advertising) advertiser.start(AdvertisementPayload(newId()))
-        } else if (advertiserState != AdvertiserState.Stopped) {
-            if (on) advertiser.stop() else advertiser.reset()
+        if (advertisingAllowed()) {
+            if (!advertising && startJob?.isActive != true) startAdvertising()
+        } else {
+            startJob?.cancel()
+            rotationJob?.cancel()
+            if (advertiserState != AdvertiserState.Stopped) {
+                if (on) advertiser.stop() else advertiser.reset()
+            }
         }
 
         val scannerState = scanner.state.value
@@ -159,14 +187,42 @@ class DiscoveryController(
         }
     }
 
+    /** Advertises this period's identifier and restarts when the period ends. */
+    private fun startAdvertising() {
+        startJob =
+            scope.launch {
+                val now = wallSeconds()
+                val id = advertisedId(now)
+                if (id == null) {
+                    log.add(DiagnosticEvent.Kind.ADVERTISER, "No identity to advertise yet")
+                    return@launch
+                }
+                if (!advertisingAllowed()) return@launch
+                advertiser.start(AdvertisementPayload(id))
+                rotationJob?.cancel()
+                rotationJob =
+                    scope.launch {
+                        delay(RotatingId.secondsLeft(now) * 1_000 + ROTATION_MARGIN_MILLIS)
+                        if (advertisingAllowed()) {
+                            log.add(DiagnosticEvent.Kind.ADVERTISER, "New period, new identifier")
+                            advertiser.stop()
+                            reconcile()
+                        }
+                    }
+            }
+    }
+
     private fun onSighting(sighting: Sighting) {
         val id = sighting.temporaryId
-        if (tracker.record(sighting)) {
-            log.add(DiagnosticEvent.Kind.SIGHTING, "New device, ${sighting.rssi} dBm", id.toHex())
-            lastLogged[id] = sighting.elapsedMillis
-        } else if (sighting.elapsedMillis - (lastLogged[id] ?: 0) >= SIGHTING_LOG_MILLIS) {
-            log.add(DiagnosticEvent.Kind.SIGHTING, "Seen, ${sighting.rssi} dBm", id.toHex())
-            lastLogged[id] = sighting.elapsedMillis
+        val key =
+            resolver.resolve(id)?.let { NearbyKey.Peer(it) } ?: NearbyKey.Unknown(id)
+        val who = if (key is NearbyKey.Peer) "paired phone" else "device"
+        if (tracker.record(sighting, key)) {
+            log.add(DiagnosticEvent.Kind.SIGHTING, "New $who, ${sighting.rssi} dBm", id.toHex())
+            lastLogged[key] = sighting.elapsedMillis
+        } else if (sighting.elapsedMillis - (lastLogged[key] ?: 0) >= SIGHTING_LOG_MILLIS) {
+            log.add(DiagnosticEvent.Kind.SIGHTING, "Seen $who, ${sighting.rssi} dBm", id.toHex())
+            lastLogged[key] = sighting.elapsedMillis
         }
         _nearby.value = tracker.snapshot()
     }
@@ -174,9 +230,9 @@ class DiscoveryController(
     private fun prune() {
         val gone = tracker.prune(elapsedClock(), _timeoutMillis.value)
         if (gone.isEmpty()) return
-        gone.forEach { id ->
-            lastLogged.remove(id)
-            log.add(DiagnosticEvent.Kind.SIGHTING, "Device out of range", id.toHex())
+        gone.forEach { key ->
+            lastLogged.remove(key)
+            log.add(DiagnosticEvent.Kind.SIGHTING, "Out of range", key.toString())
         }
         _nearby.value = tracker.snapshot()
     }
@@ -197,5 +253,6 @@ class DiscoveryController(
     companion object {
         const val DEFAULT_TIMEOUT_MILLIS = 30_000L
         private const val SIGHTING_LOG_MILLIS = 2_000L
+        private const val ROTATION_MARGIN_MILLIS = 500L
     }
 }

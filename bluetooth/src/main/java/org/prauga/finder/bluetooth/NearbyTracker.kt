@@ -7,8 +7,21 @@ import org.prauga.finder.bluetooth.protocol.TemporaryId
 
 data class RssiSample(val elapsedMillis: Long, val rssi: Int)
 
+/** Who a sighting belongs to: a paired phone, or an identifier nobody here can place. */
+sealed interface NearbyKey {
+    data class Peer(val deviceIdHex: String) : NearbyKey
+
+    data class Unknown(val id: TemporaryId) : NearbyKey
+}
+
+/** Maps a received identifier to a paired phone's device ID, or null. */
+fun interface PeerResolver {
+    fun resolve(id: TemporaryId): String?
+}
+
 data class NearbyDevice(
-    val temporaryId: TemporaryId,
+    val key: NearbyKey,
+    val advertisedId: TemporaryId,
     val rssi: Int,
     val txPower: Int?,
     val firstSeenMillis: Long,
@@ -17,21 +30,25 @@ data class NearbyDevice(
     val history: List<RssiSample>,
 )
 
-/** Devices heard recently, keyed by temporary ID; times are on the elapsed-realtime clock. */
+/** Devices heard recently; times are on the elapsed-realtime clock. */
 class NearbyTracker(
     private val historyWindowMillis: Long = 60_000,
     private val maxHistory: Int = 600,
 ) {
-    private val devices = LinkedHashMap<TemporaryId, NearbyDevice>()
+    private val devices = LinkedHashMap<NearbyKey, NearbyDevice>()
 
-    /** Returns true when [sighting] is the first from its device. */
-    fun record(sighting: Sighting): Boolean {
-        val previous = devices[sighting.temporaryId]
+    /** Returns true when [sighting] is the first under [key]. */
+    fun record(
+        sighting: Sighting,
+        key: NearbyKey = NearbyKey.Unknown(sighting.temporaryId),
+    ): Boolean {
+        val previous = devices[key]
         val sample = RssiSample(sighting.elapsedMillis, sighting.rssi)
         if (previous == null) {
-            devices[sighting.temporaryId] =
+            devices[key] =
                 NearbyDevice(
-                    temporaryId = sighting.temporaryId,
+                    key = key,
+                    advertisedId = sighting.temporaryId,
                     rssi = sighting.rssi,
                     txPower = sighting.txPower,
                     firstSeenMillis = sighting.elapsedMillis,
@@ -48,8 +65,9 @@ class NearbyTracker(
                 .sortedBy { it.elapsedMillis }
                 .filter { lastSeen - it.elapsedMillis <= historyWindowMillis }
                 .takeLast(maxHistory)
-        devices[sighting.temporaryId] =
+        devices[key] =
             previous.copy(
+                advertisedId = if (latest) sighting.temporaryId else previous.advertisedId,
                 rssi = if (latest) sighting.rssi else previous.rssi,
                 txPower = if (latest) sighting.txPower else previous.txPower,
                 lastSeenMillis = lastSeen,
@@ -59,11 +77,11 @@ class NearbyTracker(
         return false
     }
 
-    /** Drops devices not heard for [timeoutMillis] and returns their IDs. */
-    fun prune(now: Long, timeoutMillis: Long): List<TemporaryId> {
+    /** Drops devices not heard for [timeoutMillis] and returns their keys. */
+    fun prune(now: Long, timeoutMillis: Long): List<NearbyKey> {
         val gone = devices.values.filter { now - it.lastSeenMillis > timeoutMillis }
-        gone.forEach { devices.remove(it.temporaryId) }
-        return gone.map { it.temporaryId }
+        gone.forEach { devices.remove(it.key) }
+        return gone.map { it.key }
     }
 
     fun clear() {

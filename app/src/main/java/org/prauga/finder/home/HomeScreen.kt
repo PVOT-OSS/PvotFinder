@@ -43,9 +43,10 @@ import org.prauga.finder.bluetooth.BluetoothPermissions
 import org.prauga.finder.bluetooth.DiscoveryController
 import org.prauga.finder.bluetooth.DiscoveryStatus
 import org.prauga.finder.bluetooth.NearbyDevice
+import org.prauga.finder.bluetooth.NearbyKey
 import org.prauga.finder.bluetooth.ScannerState
 import org.prauga.finder.bluetooth.protocol.TemporaryId
-import org.prauga.finder.deviceName
+import org.prauga.finder.nearbyName
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.scanErrorLabel
@@ -60,7 +61,7 @@ fun HomeScreen(
     identity: IdentityRepository,
     onAddPhone: () -> Unit,
     onOpenPeer: (String) -> Unit,
-    onOpenDevice: ((TemporaryId) -> Unit)? = null,
+    onOpenDevice: ((NearbyKey) -> Unit)? = null,
     onOpenDiagnostics: (() -> Unit)? = null,
 ) {
     val peers by identity.peers.collectAsStateWithLifecycle(emptyList())
@@ -120,7 +121,7 @@ fun HomeScreen(
                 }
             }
         }
-        item { MyPhonesGroup(peers, onAddPhone, onOpenPeer) }
+        item { MyPhonesGroup(peers, nearby, onAddPhone, onOpenPeer) }
         item {
             PvotListGroup(title = stringResource(R.string.section_discovery)) {
                 item {
@@ -163,7 +164,15 @@ fun HomeScreen(
                 }
             }
         }
-        item { NearbyList(nearby, status.wantScanning, now, onOpenDevice) }
+        item {
+            NearbyList(
+                nearby,
+                peers.associate { it.deviceIdHex to it.name },
+                status.wantScanning,
+                now,
+                onOpenDevice,
+            )
+        }
         item { ThisPhoneGroup(identity) }
     }
 }
@@ -171,9 +180,10 @@ fun HomeScreen(
 @Composable
 private fun NearbyList(
     nearby: List<NearbyDevice>,
+    peerNames: Map<String, String>,
     scanning: Boolean,
     now: Long,
-    onOpenDevice: ((TemporaryId) -> Unit)?,
+    onOpenDevice: ((NearbyKey) -> Unit)?,
 ) {
     PvotListGroup(title = stringResource(R.string.section_nearby)) {
         if (nearby.isEmpty()) {
@@ -191,7 +201,7 @@ private fun NearbyList(
         nearby.forEach { device ->
             item {
                 PvotListRow(
-                    title = deviceName(device.temporaryId),
+                    title = nearbyName(device, peerNames),
                     supportingText = timeAgo(now, device.lastSeenMillis),
                     trailing = {
                         Text(
@@ -199,7 +209,7 @@ private fun NearbyList(
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     },
-                    onClick = onOpenDevice?.let { open -> { open(device.temporaryId) } },
+                    onClick = onOpenDevice?.let { open -> { open(device.key) } },
                 )
             }
         }

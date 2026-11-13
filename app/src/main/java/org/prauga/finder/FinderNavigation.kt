@@ -20,7 +20,7 @@ import org.prauga.finder.peers.PeerScreen
 
 @Serializable data object HomeKey : NavKey
 
-@Serializable data class DeviceKey(val idHex: String) : NavKey
+@Serializable data class DeviceKey(val key: String) : NavKey
 
 @Serializable data object DiagnosticsKey : NavKey
 
@@ -49,11 +49,13 @@ fun FinderNavigation(container: AppContainer) {
                         identity = container.identity,
                         onAddPhone = { backStack.add(AddPhoneKey) },
                         onOpenPeer = { backStack.add(PeerKey(it)) },
-                        onOpenDevice = { backStack.add(DeviceKey(it.toHex())) },
+                        onOpenDevice = { backStack.add(DeviceKey(it.asString())) },
                         onOpenDiagnostics = { backStack.add(DiagnosticsKey) },
                     )
                 }
-                entry<DeviceKey> { key -> DeviceScreen(container.discovery, key.idHex, back) }
+                entry<DeviceKey> { entry ->
+                    DeviceScreen(container.discovery, container.identity, entry.key, back)
+                }
                 entry<DiagnosticsKey> {
                     DiagnosticsScreen(container.discovery, container.diagnostics, back)
                 }

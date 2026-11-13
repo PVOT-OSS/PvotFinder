@@ -21,19 +21,29 @@ import com.prauga.pvot.designsystem.components.list.PvotListGroup
 import com.prauga.pvot.designsystem.components.list.PvotPreferenceRow
 import kotlinx.coroutines.launch
 import org.prauga.finder.R
+import org.prauga.finder.bluetooth.NearbyDevice
+import org.prauga.finder.bluetooth.NearbyKey
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.identity.Peer
 import org.prauga.finder.peers.NameDialog
 import org.prauga.finder.peers.pairedSummary
 
 @Composable
-fun MyPhonesGroup(peers: List<Peer>, onAddPhone: () -> Unit, onOpenPeer: (String) -> Unit) {
+fun MyPhonesGroup(
+    peers: List<Peer>,
+    nearby: List<NearbyDevice>,
+    onAddPhone: () -> Unit,
+    onOpenPeer: (String) -> Unit,
+) {
     PvotListGroup(title = stringResource(R.string.section_my_phones)) {
         peers.forEach { peer ->
             item {
+                val seen = nearby.firstOrNull { it.key == NearbyKey.Peer(peer.deviceIdHex) }
                 PvotPreferenceRow(
                     title = peer.name,
-                    summary = pairedSummary(peer),
+                    summary =
+                        if (seen != null) stringResource(R.string.peer_nearby, seen.rssi)
+                        else pairedSummary(peer),
                     onClick = { onOpenPeer(peer.deviceIdHex) },
                 )
             }

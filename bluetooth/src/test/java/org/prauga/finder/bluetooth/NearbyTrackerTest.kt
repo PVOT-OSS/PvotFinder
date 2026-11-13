@@ -35,7 +35,7 @@ class NearbyTrackerTest {
         tracker.record(seen(a, 2_000))
         tracker.record(seen(b, 3_000))
 
-        assertEquals(listOf(b, a), tracker.snapshot().map { it.temporaryId })
+        assertEquals(listOf(NearbyKey.Unknown(b), NearbyKey.Unknown(a)), tracker.snapshot().map { it.key })
     }
 
     @Test
@@ -64,8 +64,20 @@ class NearbyTrackerTest {
         tracker.record(seen(a, 1_000))
         tracker.record(seen(b, 5_000))
 
-        assertEquals(emptyList<TemporaryId>(), tracker.prune(now = 31_000, timeoutMillis = 30_000))
-        assertEquals(listOf(a), tracker.prune(now = 31_001, timeoutMillis = 30_000))
-        assertEquals(listOf(b), tracker.snapshot().map { it.temporaryId })
+        assertEquals(emptyList<NearbyKey>(), tracker.prune(now = 31_000, timeoutMillis = 30_000))
+        assertEquals(listOf(NearbyKey.Unknown(a)), tracker.prune(now = 31_001, timeoutMillis = 30_000))
+        assertEquals(listOf(NearbyKey.Unknown(b)), tracker.snapshot().map { it.key })
+    }
+
+    @Test
+    fun `sightings of one peer under rotating identifiers stay one device`() {
+        val peer = NearbyKey.Peer("aa")
+        assertTrue(tracker.record(seen(a, 1_000, -60), peer))
+        assertFalse(tracker.record(seen(b, 2_000, -50), peer))
+
+        val device = tracker.snapshot().single()
+        assertEquals(peer, device.key)
+        assertEquals(b, device.advertisedId)
+        assertEquals(2, device.sightings)
     }
 }

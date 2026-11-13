@@ -20,6 +20,8 @@ import org.prauga.finder.bluetooth.DiscoveryController
 import org.prauga.finder.bluetooth.ScanStartGuard
 import org.prauga.finder.bluetooth.pairing.PairingClient
 import org.prauga.finder.bluetooth.pairing.PairingServer
+import org.prauga.finder.bluetooth.protocol.RotatingId
+import org.prauga.finder.finding.PeerIds
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.pairing.PairingController
 
@@ -32,6 +34,17 @@ class AppContainer(context: Context) {
     val diagnostics = DiagnosticsLog()
     private val permissions = BluetoothPermissions(context)
 
+    val identity =
+        IdentityRepository.create(
+            context,
+            defaultName = {
+                Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
+                    ?: Build.MODEL
+            },
+        )
+
+    private val peerIds = PeerIds(identity).also { it.start(scope) }
+
     val discovery =
         DiscoveryController(
             scope = scope,
@@ -41,16 +54,11 @@ class AppContainer(context: Context) {
             scanner = AndroidBleScanner(adapter, permissions, diagnostics, scope, guard = scanGuard),
             log = diagnostics,
             elapsedClock = SystemClock::elapsedRealtime,
-        )
-
-    val identity =
-        IdentityRepository.create(
-            context,
-            defaultName = {
-                Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
-                    ?: Build.MODEL
+            advertisedId = { seconds ->
+                val secret = identity.beaconSecret()
+                RotatingId.forPeriod(secret, RotatingId.period(seconds)).also { secret.fill(0) }
             },
-        )
+        ).also { it.resolver = peerIds }
 
     val pairing =
         PairingController(

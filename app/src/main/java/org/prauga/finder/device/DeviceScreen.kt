@@ -27,23 +27,32 @@ import org.prauga.finder.R
 import org.prauga.finder.SubScreen
 import org.prauga.finder.bluetooth.DiscoveryController
 import org.prauga.finder.bluetooth.NearbyDevice
-import org.prauga.finder.deviceName
+import org.prauga.finder.asString
+import org.prauga.finder.identity.IdentityRepository
+import org.prauga.finder.nearbyName
 import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.timeAgo
 
 private const val CHART_WINDOW_MILLIS = 60_000L
 
 @Composable
-fun DeviceScreen(discovery: DiscoveryController, idHex: String, onBack: () -> Unit) {
+fun DeviceScreen(
+    discovery: DiscoveryController,
+    identity: IdentityRepository,
+    key: String,
+    onBack: () -> Unit,
+) {
     val nearby by discovery.nearby.collectAsStateWithLifecycle()
+    val peers by identity.peers.collectAsStateWithLifecycle(emptyList())
+    val peerNames = peers.associate { it.deviceIdHex to it.name }
     val now = rememberElapsedNow()
-    val current = nearby.firstOrNull { it.temporaryId.toHex() == idHex }
+    val current = nearby.firstOrNull { it.key.asString() == key }
     var lastKnown by remember { mutableStateOf<NearbyDevice?>(null) }
     if (current != null) lastKnown = current
     val device = current ?: lastKnown
 
     SubScreen(
-        title = device?.let { deviceName(it.temporaryId) } ?: stringResource(R.string.device),
+        title = device?.let { nearbyName(it, peerNames) } ?: stringResource(R.string.device),
         onBack = onBack,
     ) {
         if (device == null) {
@@ -56,7 +65,7 @@ fun DeviceScreen(discovery: DiscoveryController, idHex: String, onBack: () -> Un
                 item {
                     PvotListRow(
                         title = stringResource(R.string.temporary_id),
-                        supportingText = device.temporaryId.toHex(),
+                        supportingText = device.advertisedId.toHex(),
                     )
                 }
                 item {

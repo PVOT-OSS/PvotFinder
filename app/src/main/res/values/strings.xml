@@ -42,7 +42,8 @@
     <string name="nearby_empty">No phones yet</string>
     <string name="nearby_empty_scanning">Turn on \"Make this phone visible\" on the other phone.</string>
     <string name="nearby_empty_off">Turn on \"Look for nearby phones\" to see them here.</string>
-    <string name="device_name">Phone %1$s</string>
+    <string name="device_unknown">Pvot Finder phone %1$s, not yours</string>
+    <string name="peer_nearby">Maybe nearby, %1$d dBm</string>
     <string name="rssi_dbm">%1$d dBm</string>
     <string name="just_now">Just now</string>
     <string name="seconds_ago">%1$d s ago</string>
