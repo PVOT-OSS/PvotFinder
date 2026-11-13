@@ -29,7 +29,10 @@ fun FindGroup(deviceIdHex: String, nearby: NearbyDevice?, state: FindState?, fin
             Modifier.padding(PvotSpacing.L),
             verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
         ) {
-            val verified = state is FindState.Verified || state == FindState.Ringing
+            val verified =
+                state is FindState.Verified ||
+                    state == FindState.Ringing ||
+                    state == FindState.RingStopped
             Text(
                 when {
                     nearby == null -> stringResource(R.string.find_not_nearby)

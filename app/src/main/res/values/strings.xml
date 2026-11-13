@@ -143,7 +143,7 @@
     <string name="find_verified_hint">It proved it is your phone. Signal strength is a rough sign of closeness, not a distance.</string>
     <string name="find_working">Connecting</string>
     <string name="find_ringing">Ringing for 30 seconds</string>
-    <string name="find_ring_stopped">Stopped ringing</string>
+    <string name="find_ring_stopped">Not ringing</string>
     <string name="find_verify">Check it is really there</string>
     <string name="find_ring">Play sound</string>
     <string name="find_stop">Stop sound</string>

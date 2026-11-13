@@ -7,6 +7,7 @@ import android.os.SystemClock
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,7 +60,16 @@ class Finder(
     private fun run(deviceIdHex: String, command: Command) {
         if (_states.value[deviceIdHex] == FindState.Working) return
         set(deviceIdHex, FindState.Working)
-        scope.launch { set(deviceIdHex, session(deviceIdHex, command)) }
+        scope.launch {
+            val result = session(deviceIdHex, command)
+            set(deviceIdHex, result)
+            if (result == FindState.Ringing) {
+                delay(RING_SECONDS * 1_000L)
+                if (_states.value[deviceIdHex] == FindState.Ringing) {
+                    set(deviceIdHex, FindState.RingStopped)
+                }
+            }
+        }
     }
 
     private suspend fun session(deviceIdHex: String, command: Command): FindState {
