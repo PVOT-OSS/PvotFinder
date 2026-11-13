@@ -10,6 +10,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
@@ -128,6 +129,7 @@ fun HomeScreen(
                     )
                 }
                 item { NotificationsRow() }
+                item { LocationRow() }
             }
         }
         item { MyPhonesGroup(peers, nearby, onAddPhone, onOpenPeer) }
@@ -322,6 +324,51 @@ private fun NotificationsRow() {
                 )
             } else {
                 launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+    )
+}
+
+/** Optional: lets this phone remember where it was when it heard a paired phone. */
+@Composable
+private fun LocationRow() {
+    val context = LocalContext.current
+    fun allowed() =
+        context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+    var granted by remember { mutableStateOf(allowed()) }
+    LifecycleResumeEffect(Unit) {
+        granted = allowed()
+        onPauseOrDispose {}
+    }
+    var asked by rememberSaveable { mutableStateOf(false) }
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            asked = true
+            granted = allowed()
+        }
+    PvotPreferenceRow(
+        title = stringResource(R.string.location),
+        value =
+            stringResource(if (granted) R.string.permission_granted else R.string.location_optional),
+        summary = if (granted) null else stringResource(R.string.location_summary),
+        showChevron = !granted,
+        onClick = {
+            if (granted) return@PvotPreferenceRow
+            if (asked) {
+                context.startActivity(
+                    Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.fromParts("package", context.packageName, null),
+                    )
+                )
+            } else {
+                launcher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    )
+                )
             }
         },
     )

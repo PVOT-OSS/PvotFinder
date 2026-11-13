@@ -27,6 +27,8 @@ import org.prauga.finder.finding.Findable
 import org.prauga.finder.finding.Finder
 import org.prauga.finder.finding.FindingHost
 import org.prauga.finder.finding.FindingProtocol
+import org.prauga.finder.finding.LastSeenRecorder
+import org.prauga.finder.finding.LocationFinder
 import org.prauga.finder.finding.PeerIds
 import org.prauga.finder.finding.Ringer
 import org.prauga.finder.identity.IdentityRepository
@@ -69,12 +71,15 @@ class AppContainer(context: Context) {
 
     val findable = Findable(context, discovery)
 
+    val locations = LocationFinder(context)
+
     val ringer = Ringer(context, scope)
 
     val finder =
         Finder(scope, discovery, identity, GattMessageClient(context, diagnostics), diagnostics)
 
     init {
+        LastSeenRecorder(scope, discovery.nearby, identity, locations).start()
         FindingHost(
                 scope,
                 discovery.status,

@@ -156,4 +156,15 @@
     <string name="findable_channel">Findable</string>
     <string name="findable_title">Your phones can find this one</string>
     <string name="findable_text">Pvot Finder is advertising over Bluetooth so your paired phones can find it.</string>
+    <string name="location">Location</string>
+    <string name="location_optional">Optional</string>
+    <string name="location_summary">Lets this phone remember where it was when it last heard your other phones. Kept on this phone only.</string>
+    <string name="last_seen_none_title">Not seen yet</string>
+    <string name="last_seen_none">This phone remembers where it was each time it hears %1$s. Turn on "Look for nearby phones" while they are together.</string>
+    <string name="last_seen_title">Last seen %1$s</string>
+    <string name="last_seen_located">%1$s, place accurate to about %2$d m</string>
+    <string name="last_seen_located_unknown">%1$s</string>
+    <string name="last_seen_no_location">%1$s, place unknown: Pvot Finder had no location permission</string>
+    <string name="last_seen_earlier">Earlier, one per hour</string>
+    <string name="open_in_maps">Open in map app</string>
 </resources>

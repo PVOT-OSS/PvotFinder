@@ -53,6 +53,7 @@ fun PeerScreen(
     SubScreen(peer?.name ?: stringResource(R.string.device), onBack) {
         if (peer == null) return@SubScreen
         item { FindGroup(deviceIdHex, nearby, findStates[deviceIdHex], finder) }
+        item { LastSeenCard(identity, deviceIdHex, peer.name) }
         item {
             PvotListGroup {
                 item {
