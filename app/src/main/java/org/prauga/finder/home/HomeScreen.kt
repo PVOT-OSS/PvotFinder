@@ -4,6 +4,11 @@
 package org.prauga.finder.home
 
 import android.app.Activity
+import android.Manifest
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -119,6 +124,7 @@ fun HomeScreen(
                         onClick = { if (!granted) requestPermissions() },
                     )
                 }
+                item { NotificationsRow() }
             }
         }
         item { MyPhonesGroup(peers, nearby, onAddPhone, onOpenPeer) }
@@ -281,3 +287,39 @@ private fun rememberPermissionRequest(onResult: () -> Unit): () -> Unit {
 
 private fun Activity.canAskAgain(): Boolean =
     BluetoothPermissions.REQUIRED.any { shouldShowRequestPermissionRationale(it) }
+
+/** Ringing needs a notification to stop it, so this phone only rings when it can show one. */
+@Composable
+private fun NotificationsRow() {
+    val context = LocalContext.current
+    fun allowed() = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    var granted by remember { mutableStateOf(allowed()) }
+    LifecycleResumeEffect(Unit) {
+        granted = allowed()
+        onPauseOrDispose {}
+    }
+    var asked by rememberSaveable { mutableStateOf(false) }
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            asked = true
+            granted = allowed()
+        }
+    PvotPreferenceRow(
+        title = stringResource(R.string.notifications),
+        value =
+            stringResource(if (granted) R.string.permission_granted else R.string.permission_needed),
+        summary = if (granted) null else stringResource(R.string.notifications_summary),
+        showChevron = !granted,
+        onClick = {
+            if (granted) return@PvotPreferenceRow
+            if (asked) {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                )
+            } else {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+    )
+}

@@ -68,7 +68,15 @@ fun FinderNavigation(container: AppContainer) {
                 }
                 entry<ShowCodeKey> { ShowCodeScreen(container.pairing, backHome, back) }
                 entry<ScanCodeKey> { ScanCodeScreen(container.pairing, backHome, back) }
-                entry<PeerKey> { key -> PeerScreen(container.identity, key.deviceIdHex, back) }
+                entry<PeerKey> { key ->
+                    PeerScreen(
+                        container.identity,
+                        container.discovery,
+                        container.finder,
+                        key.deviceIdHex,
+                        back,
+                    )
+                }
             },
     )
 }

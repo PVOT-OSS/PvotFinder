@@ -31,6 +31,7 @@ android {
 
 dependencies {
     implementation(project(":bluetooth"))
+    implementation(project(":finding"))
     implementation(project(":identity"))
     implementation(libs.pvot.design.system)
     implementation(libs.pvot.core.ui)

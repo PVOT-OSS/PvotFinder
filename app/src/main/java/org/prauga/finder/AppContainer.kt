@@ -21,7 +21,13 @@ import org.prauga.finder.bluetooth.ScanStartGuard
 import org.prauga.finder.bluetooth.pairing.PairingClient
 import org.prauga.finder.bluetooth.pairing.PairingServer
 import org.prauga.finder.bluetooth.protocol.RotatingId
+import org.prauga.finder.bluetooth.gatt.GattMessageClient
+import org.prauga.finder.bluetooth.gatt.GattMessageServer
+import org.prauga.finder.finding.Finder
+import org.prauga.finder.finding.FindingHost
+import org.prauga.finder.finding.FindingProtocol
 import org.prauga.finder.finding.PeerIds
+import org.prauga.finder.finding.Ringer
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.pairing.PairingController
 
@@ -59,6 +65,32 @@ class AppContainer(context: Context) {
                 RotatingId.forPeriod(secret, RotatingId.period(seconds)).also { secret.fill(0) }
             },
         ).also { it.resolver = peerIds }
+
+    val ringer = Ringer(context, scope)
+
+    val finder =
+        Finder(scope, discovery, identity, GattMessageClient(context, diagnostics), diagnostics)
+
+    init {
+        FindingHost(
+                scope,
+                discovery.status,
+                identity,
+                newServer = {
+                    GattMessageServer(
+                        context,
+                        requireNotNull(manager),
+                        diagnostics,
+                        FindingProtocol.SERVICE_UUID,
+                        FindingProtocol.MESSAGE_CHARACTERISTIC_UUID,
+                        "Finding",
+                    )
+                },
+                ringer,
+                diagnostics,
+            )
+            .start()
+    }
 
     val pairing =
         PairingController(

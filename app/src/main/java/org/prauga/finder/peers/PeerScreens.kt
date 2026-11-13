@@ -25,13 +25,25 @@ import com.prauga.pvot.designsystem.components.textfield.PvotTextField
 import kotlinx.coroutines.launch
 import org.prauga.finder.R
 import org.prauga.finder.SubScreen
+import org.prauga.finder.bluetooth.DiscoveryController
+import org.prauga.finder.bluetooth.NearbyKey
+import org.prauga.finder.finding.Finder
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.identity.Peer
 import org.prauga.finder.pairing.PeerInfo
 
 @Composable
-fun PeerScreen(identity: IdentityRepository, deviceIdHex: String, onBack: () -> Unit) {
+fun PeerScreen(
+    identity: IdentityRepository,
+    discovery: DiscoveryController,
+    finder: Finder,
+    deviceIdHex: String,
+    onBack: () -> Unit,
+) {
     val peers by identity.peers.collectAsStateWithLifecycle(null)
+    val nearbyList by discovery.nearby.collectAsStateWithLifecycle()
+    val findStates by finder.states.collectAsStateWithLifecycle()
+    val nearby = nearbyList.firstOrNull { it.key == NearbyKey.Peer(deviceIdHex) }
     val peer = peers?.firstOrNull { it.deviceIdHex == deviceIdHex }
     val scope = rememberCoroutineScope()
     var renaming by remember { mutableStateOf(false) }
@@ -40,6 +52,7 @@ fun PeerScreen(identity: IdentityRepository, deviceIdHex: String, onBack: () -> 
 
     SubScreen(peer?.name ?: stringResource(R.string.device), onBack) {
         if (peer == null) return@SubScreen
+        item { FindGroup(deviceIdHex, nearby, findStates[deviceIdHex], finder) }
         item {
             PvotListGroup {
                 item {

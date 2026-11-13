@@ -131,4 +131,26 @@
     <string name="reset_summary">Forget all paired phones and make new keys</string>
     <string name="reset_title">Reset Pvot Finder?</string>
     <string name="reset_message">This phone forgets every paired phone and gets new keys. Your other phones can no longer find it until you pair again.</string>
+    <string name="ring_channel">Ringing</string>
+    <string name="ring_title">Pvot Finder is ringing this phone</string>
+    <string name="ring_text">%1$s is looking for this phone</string>
+    <string name="ring_stop">Stop</string>
+    <string name="find_not_nearby">Not nearby</string>
+    <string name="find_not_nearby_hint">Turn on "Look for nearby phones" and walk around. The other phone needs Pvot Finder visible.</string>
+    <string name="find_maybe">Maybe nearby, %1$d dBm</string>
+    <string name="find_maybe_hint">Heard its identifier. Check that it is really your phone before relying on it.</string>
+    <string name="find_verified">Verified nearby, %1$d dBm</string>
+    <string name="find_verified_hint">It proved it is your phone. Signal strength is a rough sign of closeness, not a distance.</string>
+    <string name="find_working">Connecting</string>
+    <string name="find_ringing">Ringing for 30 seconds</string>
+    <string name="find_ring_stopped">Stopped ringing</string>
+    <string name="find_verify">Check it is really there</string>
+    <string name="find_ring">Play sound</string>
+    <string name="find_stop">Stop sound</string>
+    <string name="find_failed_not_nearby">It is no longer nearby.</string>
+    <string name="find_failed_unreachable">Could not connect. Move closer and try again.</string>
+    <string name="find_failed_not_verified">The phone answering could not prove it is yours.</string>
+    <string name="find_failed_refused">That phone refused. It may not be allowed to show notifications.</string>
+    <string name="notifications">Notifications</string>
+    <string name="notifications_summary">Needed so this phone can ring when your other phones look for it. It only rings with a notification you can stop.</string>
 </resources>
