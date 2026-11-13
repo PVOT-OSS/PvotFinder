@@ -43,6 +43,8 @@ include(":identity")
 
 include(":noise")
 
+include(":nostr")
+
 include(":pairing")
 
 providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }

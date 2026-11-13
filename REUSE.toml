@@ -30,3 +30,8 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "The cacophony authors"
 SPDX-License-Identifier = "Unlicense"
 
+[[annotations]]
+path = "nostr/src/test/resources/bip340-test-vectors.csv"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Pieter Wuille, Jonas Nick, Tim Ruffing"
+SPDX-License-Identifier = "MIT"
