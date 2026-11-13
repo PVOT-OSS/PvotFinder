@@ -56,6 +56,12 @@ its own location every 30 minutes (and once when it gets a connection after bein
 - Needs: `INTERNET`; location while the app is not on screen, which comes from adding the `location`
   type to the existing foreground service (allowed because the service is started from the app).
 - Defaults: no public board is contacted until the user has chosen the boards to use.
+- First real test (2026-11-13, maintainer chose relay.damus.io, nos.lol, relay.primal.net):
+  relay.primal.net stored a report and the paired phone read it back. relay.damus.io stored one but
+  often answered HTTP 503. nos.lol never answered our posts (reads work, and an invalid post is
+  refused at once), so it appears to hold back events from unknown keys; since every report uses a
+  fresh key on purpose, such boards cannot be used for posting. Boards accepting a report also
+  checked its id and signature, the independent check of the event format.
 
 ## 2. M4b — Unwanted-tracking protection
 
