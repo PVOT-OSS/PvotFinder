@@ -47,4 +47,6 @@ include(":nostr")
 
 include(":pairing")
 
+include(":report")
+
 providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }
