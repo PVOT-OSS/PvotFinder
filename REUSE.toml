@@ -19,12 +19,6 @@ SPDX-FileCopyrightText = "2007-2023 Gradle, Inc."
 SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
-path = ["app/src/main/res/mipmap-*/ic_launcher*", "app/src/main/res/drawable/ic_launcher_*.xml"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "The Android Open Source Project"
-SPDX-License-Identifier = "Apache-2.0"
-
-[[annotations]]
 path = "noise/src/test/resources/cacophony-subset.json"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "The cacophony authors"
