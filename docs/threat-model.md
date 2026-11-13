@@ -84,11 +84,13 @@ direct finding and the outline of relaying. Each threat lists what the design do
     is a known open problem of every finding network.
 - *Ringing someone's phone to find it.* Only for paired phones.
 
-### T7 relay or server operator (M4 sketch)
+### T7 relay or server operator (M4, see [relay.md](relay.md))
 - Reports are HPKE-encrypted to `pk_i`. The server indexes by `SHA-256(pk_i)` and never learns
   locations or owners. Relays learn their own location and that a Pvot Finder phone was near.
-  - **Remains:** fake reports, traffic analysis of owner queries (who asks for which hashes),
-    retention. To be designed in M4.
+  - With no PVOT backend, reports go to public Nostr relays. Operators see relaying and fetching IP
+    addresses and the lookup hashes asked for, never locations or which phone a hash belongs to.
+  - **Remains:** fake reports (marked "1 report" until confirmed by a second relay), traffic analysis
+    of owner queries, no central rate limiting, best-effort retention (relay.md §6).
 
 ### T8 backups
 - `allowBackup="false"`, all extraction excluded. Keystore keys never leave the phone in any case.

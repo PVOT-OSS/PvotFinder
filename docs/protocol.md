@@ -164,6 +164,9 @@ A phone with Pvot Finder hidden in someone's bag is a tracker. The design follow
 
 ## 6. Relaying through other phones (M4 sketch, not for implementation)
 
+Superseded in detail by [relay.md](relay.md) (draft), which fixes the key derivation, the report
+format and the transport (Nostr relays, no PVOT backend).
+
 - The lost phone also advertises, as **extended** advertising (both test Pixels support it, up to 1650
   bytes), a per-period X25519 public key `pk_i`. The private key `sk_i` is derived by HKDF from
   `HMAC-SHA256(B, "PvotFinder key v1" || be32(i))`, so peers can derive `sk_i` too.
