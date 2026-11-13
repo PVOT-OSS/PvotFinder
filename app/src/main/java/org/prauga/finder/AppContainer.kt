@@ -23,6 +23,7 @@ import org.prauga.finder.bluetooth.pairing.PairingServer
 import org.prauga.finder.bluetooth.protocol.RotatingId
 import org.prauga.finder.bluetooth.gatt.GattMessageClient
 import org.prauga.finder.bluetooth.gatt.GattMessageServer
+import org.prauga.finder.finding.Findable
 import org.prauga.finder.finding.Finder
 import org.prauga.finder.finding.FindingHost
 import org.prauga.finder.finding.FindingProtocol
@@ -65,6 +66,8 @@ class AppContainer(context: Context) {
                 RotatingId.forPeriod(secret, RotatingId.period(seconds)).also { secret.fill(0) }
             },
         ).also { it.resolver = peerIds }
+
+    val findable = Findable(context, discovery)
 
     val ringer = Ringer(context, scope)
 

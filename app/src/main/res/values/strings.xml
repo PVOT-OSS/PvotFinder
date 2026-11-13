@@ -23,8 +23,8 @@
     <string name="permission_needed">Needed</string>
     <string name="permission_summary">Lets Pvot Finder make this phone visible and look for other phones over Bluetooth. It does not use your location.</string>
 
-    <string name="advertise">Make this phone visible</string>
-    <string name="advertise_off">Other phones can\'t see this one</string>
+    <string name="advertise">Let my phones find this one</string>
+    <string name="advertise_off">Your other phones can\'t find this one</string>
     <string name="advertising_as">Visible as %1$s</string>
     <string name="scan">Look for nearby phones</string>
     <string name="scan_off">Not looking</string>
@@ -153,4 +153,7 @@
     <string name="find_failed_refused">That phone refused. It may not be allowed to show notifications.</string>
     <string name="notifications">Notifications</string>
     <string name="notifications_summary">Needed so this phone can ring when your other phones look for it. It only rings with a notification you can stop.</string>
+    <string name="findable_channel">Findable</string>
+    <string name="findable_title">Your phones can find this one</string>
+    <string name="findable_text">Pvot Finder is advertising over Bluetooth so your paired phones can find it.</string>
 </resources>

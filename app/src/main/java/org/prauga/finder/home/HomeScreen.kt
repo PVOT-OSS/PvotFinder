@@ -52,6 +52,7 @@ import org.prauga.finder.bluetooth.NearbyKey
 import org.prauga.finder.bluetooth.ScannerState
 import org.prauga.finder.bluetooth.protocol.TemporaryId
 import org.prauga.finder.nearbyName
+import org.prauga.finder.finding.Findable
 import org.prauga.finder.identity.IdentityRepository
 import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.scanErrorLabel
@@ -63,6 +64,7 @@ private val timeoutOptions = listOf(10_000L, 30_000L, 60_000L)
 @Composable
 fun HomeScreen(
     discovery: DiscoveryController,
+    findable: Findable,
     identity: IdentityRepository,
     onAddPhone: () -> Unit,
     onOpenPeer: (String) -> Unit,
@@ -70,6 +72,7 @@ fun HomeScreen(
     onOpenDiagnostics: (() -> Unit)? = null,
 ) {
     val peers by identity.peers.collectAsStateWithLifecycle(emptyList())
+    val findableOn by findable.enabled.collectAsStateWithLifecycle()
     val status by discovery.status.collectAsStateWithLifecycle()
     val nearby by discovery.nearby.collectAsStateWithLifecycle()
     val timeout by discovery.timeoutMillis.collectAsStateWithLifecycle()
@@ -133,8 +136,8 @@ fun HomeScreen(
                 item {
                     PvotSwitchRow(
                         title = stringResource(R.string.advertise),
-                        checked = status.wantAdvertising,
-                        onCheckedChange = discovery::setAdvertising,
+                        checked = findableOn,
+                        onCheckedChange = findable::set,
                         summary = advertiserSummary(status),
                     )
                 }

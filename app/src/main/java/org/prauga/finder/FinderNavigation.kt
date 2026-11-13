@@ -46,6 +46,7 @@ fun FinderNavigation(container: AppContainer) {
                 entry<HomeKey> {
                     HomeScreen(
                         discovery = container.discovery,
+                        findable = container.findable,
                         identity = container.identity,
                         onAddPhone = { backStack.add(AddPhoneKey) },
                         onOpenPeer = { backStack.add(PeerKey(it)) },

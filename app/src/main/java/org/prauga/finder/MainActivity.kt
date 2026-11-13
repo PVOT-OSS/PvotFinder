@@ -13,6 +13,7 @@ class MainActivity : PvotBaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        container.findable.restore()
         setPvotContent { PvotAppTheme { FinderNavigation(container) } }
     }
 
