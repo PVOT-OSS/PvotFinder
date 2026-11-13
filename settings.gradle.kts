@@ -37,4 +37,6 @@ include(":bluetooth")
 
 include(":bluetooth:protocol")
 
+include(":noise")
+
 providers.gradleProperty("pvotLibDir").orNull?.let { includeBuild(it) }
