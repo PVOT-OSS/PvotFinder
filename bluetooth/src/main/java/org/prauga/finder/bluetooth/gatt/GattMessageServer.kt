@@ -59,8 +59,11 @@ class GattMessageServer(
     suspend fun open() {
         val serviceAdded = CompletableDeferred<Int>()
         val gattServer =
-            manager.openGattServer(context, callback(serviceAdded))
-                ?: throw IOException("Bluetooth refused the GATT server")
+            try {
+                manager.openGattServer(context, callback(serviceAdded))
+            } catch (e: SecurityException) {
+                throw IOException("Nearby devices permission missing", e)
+            } ?: throw IOException("Bluetooth refused the GATT server")
         server = gattServer
         characteristic.addDescriptor(
             BluetoothGattDescriptor(

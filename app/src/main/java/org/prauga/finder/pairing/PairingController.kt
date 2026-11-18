@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.prauga.finder.bluetooth.DiagnosticEvent
 import org.prauga.finder.bluetooth.DiagnosticsLog
+import org.prauga.finder.bluetooth.PermissionState
 import org.prauga.finder.bluetooth.pairing.PairingClient
 import org.prauga.finder.bluetooth.gatt.MessageLink
 import org.prauga.finder.bluetooth.pairing.PairingServer
@@ -37,6 +38,7 @@ sealed interface PairingState {
     data class Failed(val reason: Reason) : PairingState
 
     enum class Reason {
+        PERMISSION,
         INVALID_CODE,
         EXPIRED,
         BLUETOOTH,
@@ -55,6 +57,7 @@ class PairingController(
     private val newServer: () -> PairingServer,
     private val client: PairingClient,
     private val log: DiagnosticsLog,
+    private val permissions: () -> PermissionState,
     private val appVersion: String,
     private val nowSeconds: () -> Long = { System.currentTimeMillis() / 1_000 },
 ) {
@@ -66,6 +69,8 @@ class PairingController(
 
     /** Shows a code on this phone and waits for the other phone to scan it. */
     fun show() = start {
+        val granted = permissions()
+        if (!granted.canAdvertise || !granted.canConnect) return@start fail(PairingState.Reason.PERMISSION)
         val staticKey = identity.staticKey()
         val invitation = Invitation.create(staticKey.publicKey, nowSeconds())
         val server = newServer()
@@ -107,6 +112,8 @@ class PairingController(
 
     /** Pairs with the phone whose code [qrText] was scanned. */
     fun scan(qrText: String) = start {
+        val granted = permissions()
+        if (!granted.canScan || !granted.canConnect) return@start fail(PairingState.Reason.PERMISSION)
         val invitation =
             Invitation.decode(qrText, nowSeconds())
                 ?: return@start fail(

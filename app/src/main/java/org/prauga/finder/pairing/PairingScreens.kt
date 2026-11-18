@@ -4,11 +4,8 @@
 package org.prauga.finder.pairing
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
@@ -30,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.button.PvotButton
@@ -39,6 +37,9 @@ import com.prauga.pvot.designsystem.theme.PvotSpacing
 import kotlinx.coroutines.delay
 import org.prauga.finder.R
 import org.prauga.finder.SubScreen
+import org.prauga.finder.bluetooth.BluetoothPermissions
+import org.prauga.finder.common.hasPermissions
+import org.prauga.finder.common.rememberPermissionRequest
 
 @Composable
 fun AddPhoneScreen(onShowCode: () -> Unit, onScanCode: () -> Unit, onBack: () -> Unit) {
@@ -79,6 +80,8 @@ fun AddPhoneScreen(onShowCode: () -> Unit, onScanCode: () -> Unit, onBack: () ->
 fun ShowCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: () -> Unit) {
     val state by controller.state.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
+    val allowNearby =
+        rememberPermissionRequest(BluetoothPermissions.REQUIRED) { if (it) controller.show() }
     LaunchedEffect(Unit) { controller.show() }
     DisposableEffect(activity) {
         activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -93,7 +96,7 @@ fun ShowCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: ()
                 is PairingState.Showing -> ShowingCode(s)
                 PairingState.Idle,
                 PairingState.Preparing -> Message(stringResource(R.string.pairing_preparing))
-                else -> Progress(s, controller, onDone, retry = controller::show)
+                else -> Progress(s, controller, onDone, retry = controller::show, allowNearby)
             }
         }
     }
@@ -103,19 +106,17 @@ fun ShowCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: ()
 fun ScanCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: () -> Unit) {
     val state by controller.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var cameraAllowed by remember {
-        mutableStateOf(
-            context.checkSelfPermission(Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
-        )
+    var cameraAllowed by remember { mutableStateOf(context.hasPermissions(CAMERA)) }
+    LifecycleResumeEffect(Unit) {
+        cameraAllowed = context.hasPermissions(CAMERA)
+        onPauseOrDispose {}
     }
-    val askCamera =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            cameraAllowed = it
-        }
+    val askCamera = rememberPermissionRequest(CAMERA) { cameraAllowed = it }
+    val allowNearby =
+        rememberPermissionRequest(BluetoothPermissions.REQUIRED) { if (it) controller.reset() }
     LaunchedEffect(Unit) {
         controller.reset()
-        if (!cameraAllowed) askCamera.launch(Manifest.permission.CAMERA)
+        if (!cameraAllowed) askCamera()
     }
     DisposableEffect(Unit) { onDispose { controller.cancel() } }
     SubScreen(stringResource(R.string.scan_code), onBack) {
@@ -138,13 +139,13 @@ fun ScanCodeScreen(controller: PairingController, onDone: () -> Unit, onBack: ()
                             Message(stringResource(R.string.camera_needed))
                             PvotButton(
                                 stringResource(R.string.allow_camera),
-                                { askCamera.launch(Manifest.permission.CAMERA) },
+                                askCamera,
                                 Modifier.fillMaxWidth(),
                             )
                         }
                     }
                 PairingState.Preparing -> Message(stringResource(R.string.pairing_connecting))
-                else -> Progress(s, controller, onDone, retry = controller::reset)
+                else -> Progress(s, controller, onDone, retry = controller::reset, allowNearby)
             }
         }
     }
@@ -184,6 +185,7 @@ private fun Progress(
     controller: PairingController,
     onDone: () -> Unit,
     retry: () -> Unit,
+    allowNearby: () -> Unit,
 ) {
     PvotCard(Modifier.fillMaxWidth()) {
         Column(
@@ -238,7 +240,15 @@ private fun Progress(
                         stringResource(failureText(state.reason)),
                         textAlign = TextAlign.Center,
                     )
-                    PvotButton(stringResource(R.string.try_again), retry, Modifier.fillMaxWidth())
+                    if (state.reason == PairingState.Reason.PERMISSION) {
+                        PvotButton(
+                            stringResource(R.string.allow_nearby),
+                            allowNearby,
+                            Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        PvotButton(stringResource(R.string.try_again), retry, Modifier.fillMaxWidth())
+                    }
                 }
                 else -> Unit
             }
@@ -259,6 +269,7 @@ private fun Message(text: String) {
 
 private fun failureText(reason: PairingState.Reason): Int =
     when (reason) {
+        PairingState.Reason.PERMISSION -> R.string.pairing_failed_permission
         PairingState.Reason.INVALID_CODE -> R.string.pairing_failed_invalid
         PairingState.Reason.EXPIRED -> R.string.pairing_failed_expired
         PairingState.Reason.BLUETOOTH -> R.string.pairing_failed_bluetooth
@@ -268,3 +279,5 @@ private fun failureText(reason: PairingState.Reason): Int =
         PairingState.Reason.CANCELLED_THERE -> R.string.pairing_failed_cancelled_there
         PairingState.Reason.PROTOCOL -> R.string.pairing_failed_protocol
     }
+
+private val CAMERA = arrayOf(Manifest.permission.CAMERA)

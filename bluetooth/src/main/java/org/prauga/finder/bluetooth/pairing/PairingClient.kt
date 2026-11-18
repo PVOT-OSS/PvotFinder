@@ -81,7 +81,14 @@ class PairingClient(
                     }
                 }
             guard.recordStart(SystemClock.elapsedRealtime())
-            scanner.startScan(listOf(filter), settings, callback)
+            try {
+                scanner.startScan(listOf(filter), settings, callback)
+            } catch (e: SecurityException) {
+                continuation.resumeWith(
+                    Result.failure(IOException("Nearby devices permission missing", e))
+                )
+                return@suspendCancellableCoroutine
+            }
             continuation.invokeOnCancellation { runCatching { scanner.stopScan(callback) } }
         }
     }

@@ -34,21 +34,22 @@ class GattMessageClient(private val context: Context, private val log: Diagnosti
         var lastError: IOException? = null
         repeat(CONNECT_ATTEMPTS) { attempt ->
             val link = ClientLink(device, serviceUuid, characteristicUuid)
+            var opened = false
             try {
                 withTimeout(CONNECT_TIMEOUT_MILLIS) { link.open() }
+                opened = true
                 return link
             } catch (e: TimeoutCancellationException) {
                 lastError = IOException("Timed out connecting", e)
-                link.close()
                 log.add(DiagnosticEvent.Kind.ERROR, "Connection attempt ${attempt + 1} timed out")
+            } catch (e: SecurityException) {
+                throw IOException("Nearby devices permission missing", e)
             } catch (e: IOException) {
                 lastError = e
-                link.close()
                 log.add(DiagnosticEvent.Kind.ERROR, "Connection attempt ${attempt + 1}: ${e.message}")
                 delay(RETRY_DELAY_MILLIS)
-            } catch (e: Throwable) {
-                link.close()
-                throw e
+            } finally {
+                if (!opened) link.close()
             }
         }
         throw lastError ?: IOException("Could not connect")

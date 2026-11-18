@@ -62,7 +62,8 @@ class PairingServer(context: Context, private val manager: BluetoothManager, log
                 }
             }
         advertiseCallback = cb
-        advertiser.startAdvertising(
+        try {
+            advertiser.startAdvertising(
             AdvertiseSettings.Builder()
                 .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
@@ -78,7 +79,10 @@ class PairingServer(context: Context, private val manager: BluetoothManager, log
                 )
                 .build(),
             cb,
-        )
+            )
+        } catch (e: SecurityException) {
+            throw IOException("Nearby devices permission missing", e)
+        }
         val error = started.await()
         if (error != 0) throw IOException("Pairing advertisement failed: $error")
     }

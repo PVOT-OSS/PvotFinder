@@ -119,6 +119,7 @@ class AppContainer(context: Context) {
             newServer = { PairingServer(context, requireNotNull(manager), diagnostics) },
             client = PairingClient(context, requireNotNull(manager), scanGuard, diagnostics),
             log = diagnostics,
+            permissions = permissions::current,
             appVersion = BuildConfig.VERSION_NAME,
         )
 }
