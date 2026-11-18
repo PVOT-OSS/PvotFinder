@@ -40,6 +40,10 @@ Your own phones find each other directly over Bluetooth, with no internet connec
   `BLUETOOTH_CONNECT`), Camera (scanning a pairing code only), Notifications (ringing), and a
   connected-device foreground service. No internet permission.
 
+## Privacy
+
+See [PrivacyPolicy.md](PrivacyPolicy.md).
+
 ## Building
 
 ```sh
