@@ -3,19 +3,9 @@
 
 package org.prauga.finder.home
 
-import android.app.Activity
-import android.Manifest
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.NotificationManagerCompat
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,208 +13,105 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prauga.pvot.coreui.PvotSectionHeader
 import com.prauga.pvot.designsystem.components.PvotCard
-import com.prauga.pvot.designsystem.components.PvotSegmentedControl
+import com.prauga.pvot.designsystem.components.button.PvotButton
+import com.prauga.pvot.designsystem.components.button.PvotButtonStyle
 import com.prauga.pvot.designsystem.components.list.PvotListGroup
-import com.prauga.pvot.designsystem.components.list.PvotListRow
 import com.prauga.pvot.designsystem.components.list.PvotPreferenceRow
 import com.prauga.pvot.designsystem.components.list.PvotSwitchRow
 import com.prauga.pvot.designsystem.navigation.PvotTopBarAction
 import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.finder.R
 import org.prauga.finder.SubScreen
-import org.prauga.finder.adapterLabel
-import org.prauga.finder.advertiseErrorLabel
 import org.prauga.finder.bluetooth.AdapterState
-import org.prauga.finder.bluetooth.AdvertiserState
 import org.prauga.finder.bluetooth.BluetoothPermissions
-import org.prauga.finder.bluetooth.DiscoveryController
-import org.prauga.finder.bluetooth.DiscoveryStatus
-import org.prauga.finder.bluetooth.NearbyDevice
-import org.prauga.finder.bluetooth.NearbyKey
-import org.prauga.finder.bluetooth.ScannerState
-import org.prauga.finder.bluetooth.protocol.TemporaryId
-import org.prauga.finder.nearbyName
-import org.prauga.finder.finding.Findable
-import org.prauga.finder.identity.IdentityRepository
-import org.prauga.finder.reports.ReportSettings
-import org.prauga.finder.rememberElapsedNow
-import org.prauga.finder.scanErrorLabel
-import org.prauga.finder.shortLabel
-import org.prauga.finder.timeAgo
-
-private val timeoutOptions = listOf(10_000L, 30_000L, 60_000L)
+import org.prauga.finder.common.rememberPermissionRequest
 
 @Composable
 fun HomeScreen(
-    discovery: DiscoveryController,
-    findable: Findable,
-    reportSettings: ReportSettings,
-    onOpenBoards: () -> Unit,
-    identity: IdentityRepository,
+    state: HomeUiState,
+    onEvent: (HomeEvent) -> Unit,
+    onOpenPhone: (String) -> Unit,
     onAddPhone: () -> Unit,
-    onOpenPeer: (String) -> Unit,
-    onOpenDevice: ((NearbyKey) -> Unit)? = null,
-    onOpenDiagnostics: (() -> Unit)? = null,
+    onOpenSettings: () -> Unit,
 ) {
-    val peers by identity.peers.collectAsStateWithLifecycle(emptyList())
-    val findableOn by findable.enabled.collectAsStateWithLifecycle()
-    val status by discovery.status.collectAsStateWithLifecycle()
-    val nearby by discovery.nearby.collectAsStateWithLifecycle()
-    val timeout by discovery.timeoutMillis.collectAsStateWithLifecycle()
-    val now = rememberElapsedNow()
-    val requestPermissions = rememberPermissionRequest(discovery::refreshPermissions)
     val activity = LocalActivity.current
+    val allowNearby =
+        rememberPermissionRequest(BluetoothPermissions.REQUIRED) {
+            onEvent(HomeEvent.PermissionsChanged)
+        }
 
     SubScreen(
         title = stringResource(R.string.app_name),
         onBack = null,
         actions = {
-            if (onOpenDiagnostics != null) {
-                PvotTopBarAction(
-                    painterResource(R.drawable.ic_wave_sine),
-                    stringResource(R.string.diagnostics),
-                    onOpenDiagnostics,
-                )
-            }
+            PvotTopBarAction(
+                painterResource(R.drawable.ic_settings),
+                stringResource(R.string.settings),
+                onOpenSettings,
+            )
         },
     ) {
-        item {
-            PvotListGroup(title = stringResource(R.string.section_bluetooth)) {
-                item {
-                    PvotPreferenceRow(
-                        title = stringResource(R.string.bluetooth),
-                        value = adapterLabel(status.adapter),
-                        summary =
-                            if (status.adapter == AdapterState.OFF) {
-                                stringResource(R.string.bluetooth_off_summary)
-                            } else {
-                                null
-                            },
-                        showChevron = status.adapter == AdapterState.OFF,
-                        enabled = status.adapter != AdapterState.UNAVAILABLE,
-                        onClick = {
-                            activity?.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-                        },
-                    )
-                }
-                item {
-                    val granted = status.permissions.allGranted
-                    PvotPreferenceRow(
-                        title = stringResource(R.string.permission_nearby),
-                        value =
-                            stringResource(
-                                if (granted) R.string.permission_granted
-                                else R.string.permission_needed
-                            ),
-                        summary =
-                            if (granted) null else stringResource(R.string.permission_summary),
-                        showChevron = !granted,
-                        onClick = { if (!granted) requestPermissions() },
-                    )
-                }
-                item { NotificationsRow() }
-                item { LocationRow() }
-            }
-        }
-        item { MyPhonesGroup(peers, nearby, onAddPhone, onOpenPeer) }
-        item { OnlineGroup(reportSettings, findableOn, onOpenBoards) }
-        item {
-            PvotListGroup(title = stringResource(R.string.section_discovery)) {
-                item {
-                    PvotSwitchRow(
-                        title = stringResource(R.string.advertise),
-                        checked = findableOn,
-                        onCheckedChange = findable::set,
-                        summary = advertiserSummary(status),
-                    )
-                }
-                item {
-                    PvotSwitchRow(
-                        title = stringResource(R.string.scan),
-                        checked = status.wantScanning,
-                        onCheckedChange = discovery::setScanning,
-                        summary = scannerSummary(status, now),
-                    )
-                }
-            }
-        }
-        item {
-            PvotCard(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(PvotSpacing.L),
-                    verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
-                ) {
-                    Text(
-                        stringResource(R.string.forget_after),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
-                    PvotSegmentedControl(
-                        options =
-                            timeoutOptions.map {
-                                stringResource(R.string.seconds_short, (it / 1_000).toInt())
-                            },
-                        selectedIndex = timeoutOptions.indexOf(timeout).coerceAtLeast(0),
-                        onSelect = { discovery.setTimeout(timeoutOptions[it]) },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        }
-        item {
-            NearbyList(
-                nearby,
-                peers.associate { it.deviceIdHex to it.name },
-                status.wantScanning,
-                now,
-                onOpenDevice,
-            )
-        }
-        item { ThisPhoneGroup(identity) }
-    }
-}
-
-@Composable
-private fun NearbyList(
-    nearby: List<NearbyDevice>,
-    peerNames: Map<String, String>,
-    scanning: Boolean,
-    now: Long,
-    onOpenDevice: ((NearbyKey) -> Unit)?,
-) {
-    PvotListGroup(title = stringResource(R.string.section_nearby)) {
-        if (nearby.isEmpty()) {
+        if (state.bluetooth == AdapterState.OFF) {
             item {
-                PvotListRow(
-                    title = stringResource(R.string.nearby_empty),
-                    supportingText =
-                        stringResource(
-                            if (scanning) R.string.nearby_empty_scanning
-                            else R.string.nearby_empty_off
-                        ),
-                )
-            }
-        }
-        nearby.forEach { device ->
-            item {
-                PvotListRow(
-                    title = nearbyName(device, peerNames),
-                    supportingText = timeAgo(now, device.lastSeenMillis),
-                    trailing = {
-                        Text(
-                            stringResource(R.string.rssi_dbm, device.rssi),
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
+                Notice(
+                    title = stringResource(R.string.home_bluetooth_off),
+                    text = stringResource(R.string.home_bluetooth_off_text),
+                    action = stringResource(R.string.home_turn_on),
+                    onAction = {
+                        activity?.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
                     },
-                    onClick = onOpenDevice?.let { open -> { open(device.key) } },
+                )
+            }
+        } else if (state.bluetooth == AdapterState.UNAVAILABLE) {
+            item {
+                Notice(
+                    title = stringResource(R.string.home_bluetooth_missing),
+                    text = stringResource(R.string.home_bluetooth_missing_text),
+                )
+            }
+        }
+        if (!state.nearbyAllowed) {
+            item {
+                Notice(
+                    title = stringResource(R.string.home_nearby_needed),
+                    text = stringResource(R.string.permission_summary),
+                    action = stringResource(R.string.allow_nearby),
+                    onAction = allowNearby,
+                )
+            }
+        }
+        item { ThisPhone(state, onEvent, onOpenSettings) }
+        if (state.loaded && state.phones.isEmpty()) {
+            item { NoPhones(onAddPhone) }
+        } else if (state.phones.isNotEmpty()) {
+            item {
+                PvotSectionHeader(
+                    stringResource(R.string.section_my_phones),
+                    Modifier.padding(horizontal = PvotSpacing.XS, vertical = PvotSpacing.XS),
+                )
+            }
+            state.phones.forEach { phone ->
+                item(key = phone.deviceIdHex) {
+                    PhoneCard(
+                        phone = phone,
+                        onOpen = { onOpenPhone(phone.deviceIdHex) },
+                        onPlaySound = { onEvent(HomeEvent.PlaySound(phone.deviceIdHex)) },
+                        onStopSound = { onEvent(HomeEvent.StopSound(phone.deviceIdHex)) },
+                    )
+                }
+            }
+            item {
+                PvotButton(
+                    stringResource(R.string.add_phone),
+                    onAddPhone,
+                    Modifier.fillMaxWidth(),
+                    style = PvotButtonStyle.Tonal,
+                    icon = painterResource(R.drawable.ic_plus),
                 )
             }
         }
@@ -232,148 +119,79 @@ private fun NearbyList(
 }
 
 @Composable
-private fun advertiserSummary(status: DiscoveryStatus): String =
-    when {
-        !status.wantAdvertising -> stringResource(R.string.advertise_off)
-        status.adapter != AdapterState.ON -> stringResource(R.string.waiting_for_bluetooth)
-        !status.permissions.canAdvertise -> stringResource(R.string.needs_permission)
-        else ->
-            when (val state = status.advertiser) {
-                AdvertiserState.Stopped -> stringResource(R.string.paused)
-                is AdvertiserState.Starting -> stringResource(R.string.starting)
-                is AdvertiserState.Advertising ->
-                    stringResource(R.string.advertising_as, state.payload.temporaryId.shortLabel())
-                is AdvertiserState.Failed ->
-                    stringResource(R.string.failed, advertiseErrorLabel(state.error))
-            }
-    }
-
-@Composable
-private fun scannerSummary(status: DiscoveryStatus, now: Long): String =
-    when {
-        !status.wantScanning -> stringResource(R.string.scan_off)
-        status.adapter != AdapterState.ON -> stringResource(R.string.waiting_for_bluetooth)
-        !status.permissions.canScan -> stringResource(R.string.needs_permission)
-        else ->
-            when (val state = status.scanner) {
-                ScannerState.Stopped -> stringResource(R.string.paused)
-                ScannerState.Scanning -> stringResource(R.string.scanning)
-                is ScannerState.Waiting ->
-                    stringResource(
-                        R.string.scan_waiting,
-                        ((state.untilElapsedMillis - now) / 1_000 + 1).coerceAtLeast(1).toInt(),
-                    )
-                is ScannerState.Failed -> stringResource(R.string.failed, scanErrorLabel(state.error))
-            }
-    }
-
-/**
- * Asks for the Bluetooth permissions, or opens the app's settings once Android stops showing the
- * prompt after repeated denials.
- */
-@Composable
-private fun rememberPermissionRequest(onResult: () -> Unit): () -> Unit {
-    val activity = LocalActivity.current
-    var asked by rememberSaveable { mutableStateOf(false) }
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            asked = true
-            onResult()
-        }
-    return {
-        if (activity != null && asked && !activity.canAskAgain()) {
-            activity.startActivity(
-                Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.fromParts("package", activity.packageName, null),
-                )
+private fun ThisPhone(state: HomeUiState, onEvent: (HomeEvent) -> Unit, onOpenSettings: () -> Unit) {
+    PvotListGroup(title = stringResource(R.string.section_this_phone)) {
+        item {
+            PvotSwitchRow(
+                title = stringResource(R.string.home_findable),
+                checked = state.findable != FindableStatus.OFF,
+                onCheckedChange = { onEvent(HomeEvent.SetFindable(it)) },
+                summary = stringResource(findableText(state.findable)),
             )
-        } else {
-            launcher.launch(BluetoothPermissions.REQUIRED)
+        }
+        if (state.reportsOnline && state.findable != FindableStatus.OFF) {
+            item {
+                PvotPreferenceRow(
+                    title = stringResource(R.string.home_reports_online),
+                    summary =
+                        if (state.boards == 0) stringResource(R.string.report_online_needs_boards)
+                        else stringResource(R.string.report_online_on),
+                    onClick = onOpenSettings,
+                )
+            }
         }
     }
 }
 
-private fun Activity.canAskAgain(): Boolean =
-    BluetoothPermissions.REQUIRED.any { shouldShowRequestPermissionRationale(it) }
-
-/** Ringing needs a notification to stop it, so this phone only rings when it can show one. */
-@Composable
-private fun NotificationsRow() {
-    val context = LocalContext.current
-    fun allowed() = NotificationManagerCompat.from(context).areNotificationsEnabled()
-    var granted by remember { mutableStateOf(allowed()) }
-    LifecycleResumeEffect(Unit) {
-        granted = allowed()
-        onPauseOrDispose {}
+private fun findableText(status: FindableStatus): Int =
+    when (status) {
+        FindableStatus.OFF -> R.string.home_findable_off
+        FindableStatus.STARTING -> R.string.starting
+        FindableStatus.ON -> R.string.home_findable_on
+        FindableStatus.WAITING_FOR_BLUETOOTH -> R.string.waiting_for_bluetooth
+        FindableStatus.NEEDS_PERMISSION -> R.string.needs_permission
+        FindableStatus.FAILED -> R.string.home_findable_failed
     }
-    var asked by rememberSaveable { mutableStateOf(false) }
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-            asked = true
-            granted = allowed()
+
+@Composable
+private fun NoPhones(onAddPhone: () -> Unit) {
+    PvotCard(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(PvotSpacing.L),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.M),
+        ) {
+            Text(stringResource(R.string.home_empty_title), style = MaterialTheme.typography.titleLarge)
+            Text(
+                stringResource(R.string.home_empty_text),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            PvotButton(
+                stringResource(R.string.add_phone),
+                onAddPhone,
+                Modifier.fillMaxWidth(),
+                icon = painterResource(R.drawable.ic_plus),
+            )
         }
-    PvotPreferenceRow(
-        title = stringResource(R.string.notifications),
-        value =
-            stringResource(if (granted) R.string.permission_granted else R.string.permission_needed),
-        summary = if (granted) null else stringResource(R.string.notifications_summary),
-        showChevron = !granted,
-        onClick = {
-            if (granted) return@PvotPreferenceRow
-            if (asked) {
-                context.startActivity(
-                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
-                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                )
-            } else {
-                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        },
-    )
+    }
 }
 
-/** Optional: lets this phone remember where it was when it heard a paired phone. */
 @Composable
-private fun LocationRow() {
-    val context = LocalContext.current
-    fun allowed() =
-        context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-    var granted by remember { mutableStateOf(allowed()) }
-    LifecycleResumeEffect(Unit) {
-        granted = allowed()
-        onPauseOrDispose {}
-    }
-    var asked by rememberSaveable { mutableStateOf(false) }
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            asked = true
-            granted = allowed()
-        }
-    PvotPreferenceRow(
-        title = stringResource(R.string.location),
-        value =
-            stringResource(if (granted) R.string.permission_granted else R.string.location_optional),
-        summary = if (granted) null else stringResource(R.string.location_summary),
-        showChevron = !granted,
-        onClick = {
-            if (granted) return@PvotPreferenceRow
-            if (asked) {
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.fromParts("package", context.packageName, null),
-                    )
-                )
-            } else {
-                launcher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION,
-                    )
-                )
+private fun Notice(title: String, text: String, action: String? = null, onAction: () -> Unit = {}) {
+    PvotCard(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier.padding(PvotSpacing.L),
+            verticalArrangement = Arrangement.spacedBy(PvotSpacing.S),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (action != null) {
+                PvotButton(action, onAction, Modifier.fillMaxWidth())
             }
-        },
-    )
+        }
+    }
 }

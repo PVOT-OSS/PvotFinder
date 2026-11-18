@@ -4,24 +4,30 @@
 package org.prauga.finder
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
-import org.prauga.finder.device.DeviceScreen
 import org.prauga.finder.diagnostics.DiagnosticsScreen
 import org.prauga.finder.home.HomeScreen
+import org.prauga.finder.home.HomeViewModel
 import org.prauga.finder.pairing.AddPhoneScreen
 import org.prauga.finder.pairing.ScanCodeScreen
 import org.prauga.finder.pairing.ShowCodeScreen
 import org.prauga.finder.peers.PeerScreen
 import org.prauga.finder.reports.BoardsScreen
+import org.prauga.finder.settings.SettingsScreen
+import org.prauga.finder.settings.SettingsViewModel
 
 @Serializable data object HomeKey : NavKey
 
-@Serializable data class DeviceKey(val key: String) : NavKey
+@Serializable data object SettingsKey : NavKey
 
 @Serializable data object DiagnosticsKey : NavKey
 
@@ -43,24 +49,50 @@ fun FinderNavigation(container: AppContainer) {
     NavDisplay(
         backStack = backStack,
         onBack = back,
-        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
+        entryDecorators =
+            listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
         entryProvider =
             entryProvider {
                 entry<HomeKey> {
+                    val viewModel = viewModel {
+                        HomeViewModel(
+                            container.discovery,
+                            container.findable,
+                            container.reportSettings,
+                            container.identity,
+                            container.finder,
+                            container.reportFetcher,
+                        )
+                    }
+                    val state by viewModel.state.collectAsStateWithLifecycle()
                     HomeScreen(
-                        discovery = container.discovery,
-                        findable = container.findable,
-                        reportSettings = container.reportSettings,
-                        onOpenBoards = { backStack.add(BoardsKey) },
-                        identity = container.identity,
+                        state = state,
+                        onEvent = viewModel::onEvent,
+                        onOpenPhone = { backStack.add(PeerKey(it)) },
                         onAddPhone = { backStack.add(AddPhoneKey) },
-                        onOpenPeer = { backStack.add(PeerKey(it)) },
-                        onOpenDevice = { backStack.add(DeviceKey(it.asString())) },
-                        onOpenDiagnostics = { backStack.add(DiagnosticsKey) },
+                        onOpenSettings = { backStack.add(SettingsKey) },
                     )
                 }
-                entry<DeviceKey> { entry ->
-                    DeviceScreen(container.discovery, container.identity, entry.key, back)
+                entry<SettingsKey> {
+                    val viewModel = viewModel {
+                        SettingsViewModel(
+                            container.discovery,
+                            container.findable,
+                            container.reportSettings,
+                            container.identity,
+                        )
+                    }
+                    val state by viewModel.state.collectAsStateWithLifecycle()
+                    SettingsScreen(
+                        state = state,
+                        onEvent = viewModel::onEvent,
+                        onOpenBoards = { backStack.add(BoardsKey) },
+                        onOpenDiagnostics = { backStack.add(DiagnosticsKey) },
+                        onBack = back,
+                    )
                 }
                 entry<DiagnosticsKey> {
                     DiagnosticsScreen(container.discovery, container.diagnostics, back)

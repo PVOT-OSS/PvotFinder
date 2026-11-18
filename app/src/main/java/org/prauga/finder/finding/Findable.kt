@@ -27,6 +27,11 @@ class Findable(private val context: Context, private val discovery: DiscoveryCon
         apply(on)
     }
 
+    /** Restarts the service so it picks up changed report settings. */
+    fun restart() {
+        if (_enabled.value) FindableService.start(context)
+    }
+
     private fun apply(on: Boolean) {
         discovery.setAdvertising(on)
         if (on) FindableService.start(context) else FindableService.stop(context)

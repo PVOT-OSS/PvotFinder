@@ -6,17 +6,21 @@ package org.prauga.finder.peers
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.prauga.pvot.designsystem.components.PvotCard
 import com.prauga.pvot.designsystem.components.button.PvotButton
 import com.prauga.pvot.designsystem.components.button.PvotButtonStyle
 import com.prauga.pvot.designsystem.theme.PvotSpacing
 import org.prauga.finder.R
+import org.prauga.finder.device.RssiChart
+import org.prauga.finder.rememberElapsedNow
 import org.prauga.finder.bluetooth.NearbyDevice
 import org.prauga.finder.finding.FindState
 import org.prauga.finder.finding.Finder
@@ -60,6 +64,13 @@ fun FindGroup(deviceIdHex: String, nearby: NearbyDevice?, state: FindState?, fin
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (nearby != null) {
+                RssiChart(
+                    samples = nearby.history,
+                    now = rememberElapsedNow(),
+                    windowMillis = CHART_WINDOW_MILLIS,
+                    description = stringResource(R.string.signal_chart),
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                )
                 val idle = state != FindState.Working
                 if (!verified) {
                     PvotButton(
@@ -97,3 +108,5 @@ private fun failure(reason: FindState.Reason): Int =
         FindState.Reason.NOT_VERIFIED -> R.string.find_failed_not_verified
         FindState.Reason.REFUSED -> R.string.find_failed_refused
     }
+
+private const val CHART_WINDOW_MILLIS = 60_000L

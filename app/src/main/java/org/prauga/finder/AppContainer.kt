@@ -91,6 +91,7 @@ class AppContainer(context: Context) {
         Finder(scope, discovery, identity, GattMessageClient(context, diagnostics), diagnostics)
 
     init {
+        discovery.setScanning(true)
         LastSeenRecorder(scope, discovery.nearby, identity, locations).start()
         FindingHost(
                 scope,
