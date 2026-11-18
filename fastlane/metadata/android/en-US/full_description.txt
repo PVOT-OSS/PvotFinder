@@ -1,0 +1,27 @@
+Pvot Finder helps you find your own phones. Pair them once, and from then on they find, check and ring each other directly over Bluetooth, with no account and no server.
+
+Find a phone nearby
+• See at a glance which of your phones are nearby, with how strong the signal is
+• Check it is really there: the phone proves with its key that it is yours
+• Play sound: it rings loudly for 30 seconds, even on silent, with a notification to stop it
+• Last seen: when your phones are together, each remembers where it last heard the other
+
+Find it from anywhere (optional)
+• Turn on online reports and a phone posts its own location every 30 minutes, as long as it has internet
+• Reports are locked so only your paired phones can read them, and nobody else can fake one
+• They travel over public Nostr notice boards that you choose; nothing goes to PVOT
+• Open any reported place in your map app
+
+Private by design
+• Pairing with a QR code and a 6-digit code you compare on both phones
+• The Bluetooth identifier changes about every 17 minutes, so strangers cannot follow a phone
+• Keys stay in the phone's secure hardware; nothing is backed up to the cloud
+• No ads, no analytics, no trackers, no Google services needed
+• Free and open source under the AGPL
+
+Good to know
+• Your phones need Bluetooth on and Pvot Finder installed
+• Finding nearby works within Bluetooth range, usually a room or two
+• A phone that is switched off, or has no internet, cannot report its location
+• Signal strength is a rough sign of closeness, not a distance
+• Needs Android 13 or newer

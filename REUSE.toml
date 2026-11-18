@@ -29,3 +29,9 @@ path = "nostr/src/test/resources/bip340-test-vectors.csv"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Pieter Wuille, Jonas Nick, Tim Ruffing"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "fastlane/metadata/android/**/*.txt"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Saalim Quadri <danascape@gmail.com>"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
