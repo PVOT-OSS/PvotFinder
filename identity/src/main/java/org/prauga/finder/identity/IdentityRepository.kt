@@ -130,11 +130,21 @@ class IdentityRepository(
         }
 
     fun reports(deviceIdHex: String): Flow<List<Report>> =
-        dao.reports(deviceIdHex).map { list ->
-            list.map {
-                Report(it.eventId, it.latitude, it.longitude, it.accuracyMetres, it.takenAtSeconds, it.battery)
-            }
-        }
+        dao.reports(deviceIdHex).map { list -> list.map { it.toReport() } }
+
+    /** The newest sighting of each paired phone, by device ID. */
+    val newestSeen: Flow<Map<String, LastSeen>> =
+        dao.newestSeenPerPeer().map { list -> list.associate { it.deviceIdHex to it.toLastSeen() } }
+
+    /** The newest online report of each paired phone, by device ID. */
+    val newestReports: Flow<Map<String, Report>> =
+        dao.newestReportPerPeer().map { list -> list.associate { it.deviceIdHex to it.toReport() } }
+
+    private fun ReportEntity.toReport() =
+        Report(eventId, latitude, longitude, accuracyMetres, takenAtSeconds, battery)
+
+    private fun LastSeenEntity.toLastSeen() =
+        LastSeen(seenAtMillis, latitude, longitude, accuracyMetres, rssi)
 
     /**
      * Stores a report once per event, dropping reports older than [LAST_SEEN_DAYS] days. Returns
@@ -159,9 +169,7 @@ class IdentityRepository(
 
     /** Newest first: the latest sighting, then one per hour for [LAST_SEEN_DAYS] days. */
     fun lastSeen(deviceIdHex: String): Flow<List<LastSeen>> =
-        dao.lastSeen(deviceIdHex).map { list ->
-            list.map { LastSeen(it.seenAtMillis, it.latitude, it.longitude, it.accuracyMetres, it.rssi) }
-        }
+        dao.lastSeen(deviceIdHex).map { list -> list.map { it.toLastSeen() } }
 
     /**
      * Records a sighting. A sighting in the same hour as the newest one replaces it, so each hour keeps

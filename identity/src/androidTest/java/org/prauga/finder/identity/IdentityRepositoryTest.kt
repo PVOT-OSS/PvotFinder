@@ -145,4 +145,21 @@ class IdentityRepositoryTest {
         repository.removePeer(id)
         assertTrue(repository.lastSeen(id).first().isEmpty())
     }
+
+    @Test
+    fun newestSeenAndReportArePerPeer() = runTest {
+        val a = "0a".repeat(16)
+        val b = "0b".repeat(16)
+        val hour = 60 * 60 * 1_000L
+        repository.recordSeen(a, LastSeen(10 * hour, 1.0, 2.0, 5f, -40))
+        repository.recordSeen(a, LastSeen(12 * hour, 1.5, 2.5, 5f, -45))
+        repository.recordSeen(b, LastSeen(11 * hour, null, null, null, -70))
+        repository.addReport(a, Report("e1", 1.0, 2.0, 10, 100, 50), nowSeconds = 200)
+        repository.addReport(a, Report("e2", 1.1, 2.1, 10, 150, 49), nowSeconds = 200)
+
+        val seen = repository.newestSeen.first()
+        assertEquals(12 * hour, seen.getValue(a).seenAtMillis)
+        assertEquals(11 * hour, seen.getValue(b).seenAtMillis)
+        assertEquals(mapOf(a to "e2"), repository.newestReports.first().mapValues { it.value.eventId })
+    }
 }

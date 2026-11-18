@@ -95,6 +95,12 @@ interface IdentityDao {
     @Query("SELECT * FROM last_seen WHERE device_id = :deviceIdHex ORDER BY seen_at DESC LIMIT 1")
     suspend fun newestSeen(deviceIdHex: String): LastSeenEntity?
 
+    @Query(
+        "SELECT * FROM last_seen AS s WHERE seen_at = " +
+            "(SELECT MAX(seen_at) FROM last_seen WHERE device_id = s.device_id)"
+    )
+    fun newestSeenPerPeer(): Flow<List<LastSeenEntity>>
+
     @Insert suspend fun addSeen(entry: LastSeenEntity)
 
     @Query("DELETE FROM last_seen WHERE id = :id") suspend fun removeSeen(id: Long)
@@ -108,6 +114,12 @@ interface IdentityDao {
 
     @Query("SELECT * FROM reports WHERE device_id = :deviceIdHex ORDER BY taken_at DESC")
     fun reports(deviceIdHex: String): Flow<List<ReportEntity>>
+
+    @Query(
+        "SELECT * FROM reports AS r WHERE taken_at = " +
+            "(SELECT MAX(taken_at) FROM reports WHERE device_id = r.device_id)"
+    )
+    fun newestReportPerPeer(): Flow<List<ReportEntity>>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun addReport(report: ReportEntity): Long
 
