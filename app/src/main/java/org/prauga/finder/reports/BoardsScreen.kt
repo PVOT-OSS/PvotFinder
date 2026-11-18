@@ -71,6 +71,27 @@ fun BoardsScreen(settings: ReportSettings, onBack: () -> Unit) {
                 }
             }
         }
+        val suggestions = SUGGESTED_BOARDS - boards.toSet()
+        if (suggestions.isNotEmpty()) {
+            item {
+                PvotListGroup(title = stringResource(R.string.boards_suggested)) {
+                    suggestions.forEach { board ->
+                        item {
+                            PvotListRow(
+                                title = board,
+                                trailing = {
+                                    PvotIconButton(
+                                        painterResource(R.drawable.ic_plus),
+                                        stringResource(R.string.boards_add_named, board),
+                                        { settings.addBoard(board) },
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
         item {
             PvotCard(Modifier.fillMaxWidth()) {
                 Column(
@@ -104,3 +125,6 @@ fun BoardsScreen(settings: ReportSettings, onBack: () -> Unit) {
         }
     }
 }
+
+/** Public boards that stored and returned reports in testing; never added without the user. */
+private val SUGGESTED_BOARDS = listOf("wss://relay.primal.net", "wss://relay.damus.io")

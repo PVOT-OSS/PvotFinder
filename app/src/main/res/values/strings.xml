@@ -139,6 +139,8 @@
         <item quantity="other">%d boards</item>
     </plurals>
     <string name="boards_intro">Reports are left on public notice boards (Nostr relays) for your other phones to pick up. Boards are run by other people. They see this phone\'s internet address and when it posts, but cannot read the locations or tell whose phone it is. Add the addresses of boards you trust.</string>
+    <string name="boards_suggested">Suggested boards</string>
+    <string name="boards_add_named">Add %1$s</string>
     <string name="boards_address">Board address</string>
     <string name="boards_add">Add board</string>
     <string name="boards_remove">Remove board</string>
