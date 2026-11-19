@@ -17,7 +17,7 @@
     <string name="permission_nearby">Nearby devices permission</string>
     <string name="permission_granted">Allowed</string>
     <string name="permission_needed">Needed</string>
-    <string name="permission_summary">Lets Pvot Finder make this phone visible and look for other phones over Bluetooth. It does not use your location.</string>
+    <string name="permission_summary">Lets your phones find, pair with and ring each other over Bluetooth.</string>
 
     <string name="waiting_for_bluetooth">Waiting for Bluetooth</string>
     <string name="needs_permission">Needs the nearby devices permission</string>
