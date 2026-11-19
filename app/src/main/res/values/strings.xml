@@ -95,7 +95,7 @@
     <string name="ring_text">%1$s is looking for this phone</string>
     <string name="ring_stop">Stop</string>
     <string name="find_not_nearby">Not nearby</string>
-    <string name="find_not_nearby_hint">Turn on "Look for nearby phones" and walk around. The other phone needs Pvot Finder visible.</string>
+    <string name="find_not_nearby_hint">Not heard right now. Keep Pvot Finder open and walk around; the other phone needs \"Your phones can find this one\" turned on.</string>
     <string name="find_maybe">Maybe nearby, %1$d dBm</string>
     <string name="find_maybe_hint">Heard its identifier. Check that it is really your phone before relying on it.</string>
     <string name="find_verified">Verified nearby, %1$d dBm</string>
@@ -119,7 +119,7 @@
     <string name="location_optional">Optional</string>
     <string name="location_summary">Lets this phone remember where it was when it last heard your other phones. Kept on this phone only.</string>
     <string name="last_seen_none_title">Not seen yet</string>
-    <string name="last_seen_none">This phone remembers where it was each time it hears %1$s. Turn on "Look for nearby phones" while they are together.</string>
+    <string name="last_seen_none">This phone remembers where it was each time it hears %1$s, while Pvot Finder is open.</string>
     <string name="last_seen_title">Last seen %1$s</string>
     <string name="last_seen_located">%1$s, place accurate to about %2$d m</string>
     <string name="last_seen_located_unknown">%1$s</string>
