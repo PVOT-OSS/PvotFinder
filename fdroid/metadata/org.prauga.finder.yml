@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 Saalim Quadri <danascape@gmail.com>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+PackageName: org.prauga.finder
+Name: Pvot Finder
+Summary: Find your own phones over Bluetooth, with no account or server
+License: AGPL-3.0-or-later
+AuthorName: Saalim Quadri
+SourceCode: https://github.com/PVOT-OSS/PvotSeek
+IssueTracker: https://github.com/PVOT-OSS/PvotSeek/issues
+WebSite: ""
+Categories:
+  - Connectivity
+  - Security
+CurrentVersion: "1.0.0"
+CurrentVersionCode: 10000
+Description: |
+  Pvot Finder helps you find your own phones. Pair them once with a QR code,
+  and from then on they find, check and ring each other directly over
+  Bluetooth, with no account and no server. Optionally, a phone can post its
+  own location to Nostr relays you choose, encrypted so that only your paired
+  phones can read it.
+
+RepoType: git
+Repo: https://github.com/PVOT-OSS/PvotSeek.git
+
+Builds:
+  - versionName: 1.0.0
+    versionCode: 10000
+    commit: v1.0.0
+    subdir: app
+    srclibs:
+      - PvotLib@v1.0.0
+    prebuild:
+      - sed -i -e '/pvot-oss.github.io/,+2d' ../settings.gradle.kts
+      - echo "pvotLibDir=$$PvotLib$$" >> ../gradle.properties
+    gradle:
+      - yes
