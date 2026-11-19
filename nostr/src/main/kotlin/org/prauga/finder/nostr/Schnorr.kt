@@ -36,7 +36,7 @@ object Schnorr {
     /** The 32-byte x-only public key for [privateKey]. */
     fun publicKey(privateKey: ByteArray): ByteArray {
         val d = scalar(privateKey)
-        return bytes32(multiply(G, d)!!.x)
+        return bytes32(multiplyG(d).x)
     }
 
     fun sign(
@@ -46,13 +46,13 @@ object Schnorr {
     ): ByteArray {
         require(auxRand.size == 32)
         val d0 = scalar(privateKey)
-        val publicPoint = multiply(G, d0)!!
+        val publicPoint = multiplyG(d0)
         val d = if (publicPoint.y.testBit(0)) N - d0 else d0
         val masked = xor(bytes32(d), taggedHash("BIP0340/aux", auxRand))
         val px = bytes32(publicPoint.x)
         val k0 = BigInteger(1, taggedHash("BIP0340/nonce", masked + px + message)).mod(N)
         require(k0.signum() != 0) { "Nonce is zero" }
-        val r = multiply(G, k0)!!
+        val r = multiplyG(k0)
         val k = if (r.y.testBit(0)) N - k0 else k0
         val rx = bytes32(r.x)
         val e = BigInteger(1, taggedHash("BIP0340/challenge", rx + px + message)).mod(N)
@@ -103,6 +103,9 @@ object Schnorr {
         val x = lambda.pow(2).subtract(a.x).subtract(b.x).mod(P)
         return Point(x, lambda.multiply(a.x.subtract(x)).subtract(a.y).mod(P))
     }
+
+    /** [k] is in 1 until N here, so k·G is never the point at infinity. */
+    private fun multiplyG(k: BigInteger): Point = checkNotNull(multiply(G, k)) { "k·G at infinity" }
 
     private fun multiply(point: Point, k: BigInteger): Point? {
         var result: Point? = null

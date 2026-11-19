@@ -135,8 +135,14 @@ class NoiseHandshake(
         val responderPre = if (initiator) remotePre else localPre
         if (localPre && staticKey == null) throw NoiseException("Pattern needs our static key")
         if (remotePre && remoteStatic == null) throw NoiseException("Pattern needs their static key")
-        if (initiatorPre) symmetric.mixHash(if (initiator) staticKey!!.publicKey else remoteStatic!!)
-        if (responderPre) symmetric.mixHash(if (initiator) remoteStatic!! else staticKey!!.publicKey)
+        val localKey = staticKey?.publicKey
+        val remoteKey = remoteStatic
+        if (initiatorPre) {
+            symmetric.mixHash(checkNotNull(if (initiator) localKey else remoteKey) { "Pre-known key" })
+        }
+        if (responderPre) {
+            symmetric.mixHash(checkNotNull(if (initiator) remoteKey else localKey) { "Pre-known key" })
+        }
     }
 
     val isFinished: Boolean
@@ -166,7 +172,7 @@ class NoiseHandshake(
                     if (pattern.hasPsk) symmetric.mixKey(e.publicKey)
                 }
                 Token.S -> out += symmetric.encryptAndHash(requireNotNull(staticKey).publicKey)
-                Token.PSK -> symmetric.mixKeyAndHash(psk!!)
+                Token.PSK -> symmetric.mixKeyAndHash(requirePsk())
                 else -> symmetric.mixKey(dh(token))
             }
         }
@@ -195,7 +201,7 @@ class NoiseHandshake(
                         val length = X25519.KEY_SIZE + if (symmetric.hasKey) ChaChaPoly.TAG_LEN else 0
                         remoteStatic = symmetric.decryptAndHash(take(length))
                     }
-                    Token.PSK -> symmetric.mixKeyAndHash(psk!!)
+                    Token.PSK -> symmetric.mixKeyAndHash(requirePsk())
                     else -> symmetric.mixKey(dh(token))
                 }
             }
@@ -214,6 +220,8 @@ class NoiseHandshake(
         val (c1, c2) = symmetric.split()
         return if (initiator) NoiseTransport(c1, c2) else NoiseTransport(c2, c1)
     }
+
+    private fun requirePsk(): ByteArray = checkNotNull(psk) { "Checked in init" }
 
     private fun dh(token: Token): ByteArray {
         val local: Dh25519

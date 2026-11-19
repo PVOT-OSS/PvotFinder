@@ -86,7 +86,8 @@ private constructor(
         val share =
             receive(transport) as? TransportMessage.Share
                 ?: throw PairingFailedException(PairingFailure.PROTOCOL)
-        return PairedPeer(peer, handshake.remoteStaticKey!!, share.beaconSecret)
+        val peerKey = checkNotNull(handshake.remoteStaticKey) { "XX always reveals the static key" }
+        return PairedPeer(peer, peerKey, share.beaconSecret)
     }
 
     private suspend fun handshake(handshake: NoiseHandshake): PeerInfo =
