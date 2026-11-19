@@ -71,7 +71,10 @@ class HomeViewModel(
             is HomeEvent.SetFindable -> findable.set(event.on)
             is HomeEvent.PlaySound -> finder.ring(event.deviceIdHex)
             is HomeEvent.StopSound -> finder.stopRing(event.deviceIdHex)
-            HomeEvent.PermissionsChanged -> discovery.refreshPermissions()
+            HomeEvent.PermissionsChanged -> {
+                discovery.refreshPermissions()
+                findable.restart()
+            }
         }
     }
 

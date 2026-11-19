@@ -21,6 +21,7 @@ class MainActivity : PvotBaseActivity() {
         super.onStart()
         container.discovery.refreshPermissions()
         container.discovery.setForeground(true)
+        container.findable.restart()
     }
 
     override fun onStop() {
