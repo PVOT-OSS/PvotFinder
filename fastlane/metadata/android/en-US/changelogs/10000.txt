@@ -1,0 +1,1 @@
+First release: pair your phones with a QR code, see which are nearby, check they are really yours, make them ring, see where they were last seen, and optionally let a phone report its own location over notice boards you choose, locked so only your phones can read it.

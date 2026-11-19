@@ -12,8 +12,8 @@ plugins {
 }
 
 extra.apply {
-    val versionMajor = 0
-    val versionMinor = 1
+    val versionMajor = 1
+    val versionMinor = 0
     val versionPatch = 0
     set("versionCode", versionMajor * 10000 + versionMinor * 100 + versionPatch)
     set("versionName", "$versionMajor.$versionMinor.$versionPatch")
